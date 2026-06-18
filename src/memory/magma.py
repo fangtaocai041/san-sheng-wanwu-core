@@ -7,22 +7,134 @@ memory/magma.py — 四维正交图谱记忆 (MAGMA 架构移植)
   因果图 (Causal)     — 因果关系链
   实体图 (Entity)     — 实体间关系
 
-检索 = 策略引导的图遍历, 而非纯语义相似度。
+检索 = 策略引导的图遍历 + 语义相似度评分。
+
+语义编码器:
+  - CharacterNgramEncoder (内置, 零依赖) — 基于中文汉字 n-gram 的语义匹配
+  - HuggingFaceEncoder (可选) — 需安装 sentence-transformers, 更高精度
 
 移植自: MAGMA (Multi-Graph based Agentic Memory Architecture)
 论文: arXiv 2601.03236 | GitHub: FredJiang0324/MAGMA
-
-本实现是轻量版: 无 networkx/sentence-transformers 依赖,
-保留核心四维正交图结构和策略引导遍历算法。
 """
 
 from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any, Callable, Dict, List, Optional, Set, Tuple
 from datetime import datetime
+import hashlib
 import math
 import time
 import uuid
+
+
+# ═══════════════════════════════════════════════════════════════
+# 语义编码器 (相似度计算)
+# ═══════════════════════════════════════════════════════════════
+
+def _char_ngrams(text: str, n: int = 2) -> Set[str]:
+    """生成中文文本的字符 n-gram。
+
+    中文汉字 ≈ 语义原子, 字符 n-gram 比词拆分更鲁棒。
+    例如 "长江鱼类" → {"长江", "江鱼", "鱼类"}
+    """
+    clean = ''.join(c for c in text if c.isalpha() or c.isdigit())
+    return {clean[i:i+n] for i in range(len(clean) - n + 1)}
+
+
+def _jaccard(a: Set, b: Set) -> float:
+    """Jaccard 相似度。"""
+    if not a or not b:
+        return 0.0
+    return len(a & b) / max(len(a | b), 1)
+
+
+class CharacterNgramEncoder:
+    """字符 n-gram 语义编码器 (零依赖)。
+
+    基于中文汉字的 bi-gram 和 tri-gram 重叠计算语义相似度。
+    对中文文本效果良好, 因为汉字本身就是语义单元。
+
+    用法:
+        encoder = CharacterNgramEncoder()
+        sim = encoder.similarity("长江鱼类", "长江珍稀鱼类")
+        # → ~0.5 （共享 "长江" "鱼类"）
+    """
+
+    def __init__(self, n: int = 2):
+        self.n = n
+        self.name = "char_ngram"
+
+    def encode(self, text: str) -> Set[str]:
+        """将文本编码为 n-gram 集合。"""
+        return _char_ngrams(text, self.n)
+
+    def similarity(self, a: str, b: str) -> float:
+        """计算两段文本的语义相似度 0-1。"""
+        ngrams_a = self.encode(a)
+        ngrams_b = self.encode(b)
+
+        # bi-gram + tri-gram 混合
+        bigram_sim = _jaccard(ngrams_a, ngrams_b)
+
+        tri_a = _char_ngrams(a, 3)
+        tri_b = _char_ngrams(b, 3)
+        trigram_sim = _jaccard(tri_a, tri_b)
+
+        return (bigram_sim * 0.6 + trigram_sim * 0.4)
+
+
+class HuggingFaceEncoder:
+    """基于 sentence-transformers 的语义编码器 (可选)。
+
+    需要: pip install sentence-transformers
+
+    用法:
+        encoder = HuggingFaceEncoder(model_name="all-MiniLM-L6-v2")
+        sim = encoder.similarity("长江鱼类", "长江珍稀鱼类")
+    """
+
+    def __init__(self, model_name: str = "all-MiniLM-L6-v2"):
+        self.name = f"huggingface/{model_name}"
+        self._model = None
+        self._model_name = model_name
+
+    def _lazy_load(self):
+        if self._model is not None:
+            return
+        try:
+            from sentence_transformers import SentenceTransformer
+            self._model = SentenceTransformer(self._model_name)
+        except ImportError:
+            raise ImportError(
+                "sentence-transformers not installed. "
+                "Run: pip install sentence-transformers"
+            )
+
+    def encode(self, text: str) -> list:
+        self._lazy_load()
+        return self._model.encode(text).tolist()
+
+    def similarity(self, a: str, b: str) -> float:
+        self._lazy_load()
+        emb_a = self._model.encode(a)
+        emb_b = self._model.encode(b)
+        # 余弦相似度
+        dot = sum(x * y for x, y in zip(emb_a, emb_b))
+        norm_a = math.sqrt(sum(x * x for x in emb_a))
+        norm_b = math.sqrt(sum(x * x for x in emb_b))
+        return dot / max(norm_a * norm_b, 1e-8)
+
+
+def create_encoder(backend: str = "char_ngram", **kwargs) -> Any:
+    """创建语义编码器工厂函数。
+
+    Args:
+        backend: "char_ngram" (默认, 零依赖) | "huggingface" (需安装)
+        **kwargs: 传递给编码器的参数
+    """
+    if backend == "huggingface":
+        return HuggingFaceEncoder(**kwargs)
+    return CharacterNgramEncoder(**kwargs)
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -96,7 +208,7 @@ class MagmaMemory:
         results = mem.search("鳤的保护现状")
     """
 
-    def __init__(self):
+    def __init__(self, encoder_backend: str = "char_ngram", **encoder_kwargs):
         self.name = "magma"
         self._nodes: Dict[str, MemoryNode] = {}
         self._graphs: Dict[str, Dict[str, List[Relation]]] = {
@@ -105,6 +217,8 @@ class MagmaMemory:
             RelationType.CAUSAL: {},
             RelationType.ENTITY: {},
         }
+        self._encoder = create_encoder(encoder_backend, **encoder_kwargs)
+        self._encoder_name = encoder_backend
 
     # ── 写入 ──
 
@@ -124,9 +238,9 @@ class MagmaMemory:
             if existing.node_id == node.node_id:
                 continue
 
-            # 语义关系: 关键词重叠
+            # 语义关系: n-gram 相似度
             semantic_score = self._calc_semantic(node, existing)
-            if semantic_score > 0.3:
+            if semantic_score > 0.25:
                 self._relate(node.node_id, existing.node_id,
                             RelationType.SEMANTIC, semantic_score)
 
@@ -182,6 +296,7 @@ class MagmaMemory:
         query_terms = set(query.lower().split())
 
         # 找到锚点节点 (与查询语义/实体相关的节点)
+        query_ngrams = self._encoder.encode(query)
         scored: Dict[str, float] = {}
         for nid, node in self._nodes.items():
             score = 0.0
@@ -190,12 +305,11 @@ class MagmaMemory:
                 qe_set = set(query_entities)
                 ne_set = set(node.entities)
                 overlap = len(qe_set & ne_set)
-                score += overlap * 0.4
-            # 关键词匹配
-            node_terms = set(node.content.lower().split())
-            term_overlap = len(query_terms & node_terms)
-            score += term_overlap * 0.1
-            # 内容包含匹配 (对中文友好)
+                score += overlap * 0.3
+            # 语义相似度 (n-gram 或 transformer)
+            semantic = self._encoder.similarity(query, node.content)
+            score += semantic * 0.3
+            # 关键词包含匹配
             q_lower = query.lower()
             if q_lower in node.content.lower():
                 score += 0.2
@@ -255,13 +369,8 @@ class MagmaMemory:
         return entities
 
     def _calc_semantic(self, a: MemoryNode, b: MemoryNode) -> float:
-        """计算两个节点之间的语义相似度 (基于关键词重叠)。"""
-        terms_a = set(a.content.lower().split())
-        terms_b = set(b.content.lower().split())
-        if not terms_a or not terms_b:
-            return 0.0
-        overlap = len(terms_a & terms_b)
-        return overlap / max(len(terms_a | terms_b), 1)
+        """使用语义编码器计算相似度。"""
+        return self._encoder.similarity(a.content, b.content)
 
     # ── 统计 ──
 

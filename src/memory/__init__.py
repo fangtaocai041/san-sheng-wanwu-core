@@ -27,7 +27,10 @@ from .kb import (
 )
 from .cache import SearchCache
 from .consolidate import MemorySystem, MemoryItem, ebbinghaus_forgetting, reinforcement_boost
-from .magma import MagmaMemory, MemoryNode, Relation, RelationType
+from .magma import (
+    MagmaMemory, MemoryNode, Relation, RelationType,
+    CharacterNgramEncoder, HuggingFaceEncoder, create_encoder,
+)
 from .persistence import PersistenceEngine, AgentSnapshot
 
 __all__ = [
@@ -45,5 +48,6 @@ __all__ = [
     "MemorySystem", "MemoryItem",
     "ebbinghaus_forgetting", "reinforcement_boost",
     "MagmaMemory", "MemoryNode", "Relation", "RelationType",
+    "CharacterNgramEncoder", "HuggingFaceEncoder", "create_encoder",
     "PersistenceEngine", "AgentSnapshot",
 ]
