@@ -5,6 +5,7 @@ cortex — 认知处理核心
 
 各模块功能:
   conceptual.py  概念工程: 本体设计追踪、概念溯源
+  cosmic.py      宇宙社会学: 刘慈欣概念框架代码化
   dialectics.py  辩证矛盾检测与综合 (原 conflict-arbiter)
   explanatory.py 可解释性: 推理链记录、多层解释生成 (XAI)
   validate.py    文献验证与可信度评估 (原 cognitive-search-engine)
@@ -13,6 +14,11 @@ cortex — 认知处理核心
 """
 
 from .conceptual import ConceptRegistry, Concept, ConceptRelation, ConceptRevision
+from .cosmic import (
+    CosmicSociologyEngine, SourceRecord, CosmicEvent,
+    dark_forest_trust, chain_of_suspicion_decay,
+    dimensional_projection, technology_explosion_curve,
+)
 from .dialectics import DialecticsCortex
 from .explanatory import ExplainabilityEngine, ReasoningTrace, ReasoningStep
 from .validate import ValidateCortex, calc_trust_score, calc_credibility_score
@@ -25,6 +31,10 @@ from .pipeline import Pipeline, PipelineResult, PipelineStage
 __all__ = [
     # 概念工程
     "ConceptRegistry", "Concept", "ConceptRelation", "ConceptRevision",
+    # 宇宙社会学
+    "CosmicSociologyEngine", "SourceRecord", "CosmicEvent",
+    "dark_forest_trust", "chain_of_suspicion_decay",
+    "dimensional_projection", "technology_explosion_curve",
     # 辩证综合
     "DialecticsCortex",
     # 可解释性
