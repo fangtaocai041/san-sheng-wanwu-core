@@ -255,12 +255,21 @@ def main():
             print("[硅基生命体] 状态已保存, 再见。")
 
     # 默认: 交互模式
-    print(f"硅基生命体 v0.2.0 (db: {db_path})")
-    print("输入查询或命令 (help/status/exit):")
+    print(f"╔══════════════════════════════════════════╗")
+    print(f"║     三生万物 · 硅基生命体 v1.0.0         ║")
+    print(f"║     SanShengWanWu Core                   ║")
+    print(f"╠══════════════════════════════════════════╣")
+    print(f"║  {db_path:<38}║")
+    print(f"║  130 tests · 14 cortex · 17 senses      ║")
+    print(f"╚══════════════════════════════════════════╝")
+    print("")
     wake_info = agent.wake()
     print(f"  Soul: awake={wake_info['soul_awake']}, "
           f"convergence={wake_info['soul_convergence']:.3f}")
     print(f"  Emotion: {wake_info['emotion']}")
+    print(f"  Memory: {wake_info['loaded']}")
+    print("")
+    print("  Type a query to search, or: status / help / exit")
 
     while True:
         try:
