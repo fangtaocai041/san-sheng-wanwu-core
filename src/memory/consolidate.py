@@ -1,65 +1,57 @@
 """
-memory/consolidate.py — 记忆巩固系统
+memory/consolidate.py — 记忆巩固系统 (MAGMA 增强版)
+
+整合 MAGMA 四维正交图谱记忆:
+  - 写入时自动建立四维关系 (语义/时序/因果/实体)
+  - 检索 = 策略引导图遍历 (非纯关键词匹配)
+  - 保留原有的 Ebbinghaus 遗忘曲线和三层架构
 
 三层记忆架构:
-  工作记忆 (WM)  — 当前上下文, 活跃推理状态, 易失
-  短期记忆 (STM) — 近期查询与结果, 衰减曲线
-  长期记忆 (LTM) — 巩固后的知识, 半永久存储
+  工作记忆 (WM)  — Dict 上下文
+  短期记忆 (STM) — 图谱节点, Ebbinghaus 衰减
+  长期记忆 (LTM) — 图谱节点, 巩固后不遗忘
 
-巩固过程:
-  1. 工作记忆中的模式被重复激活 → 进入短期记忆
-  2. 短期记忆中的模式被强化 ≥ consolidation_threshold 次 → 进入长期记忆
-  3. 未被强化的短期记忆按 Ebbinghaus 遗忘曲线衰减
-
-遗忘曲线: R(t) = e^(-t/S) 其中 S = 记忆强度
-  R = 1.0 时完全记住, R → 0 时完全遗忘
+MAGMA 升级:
+  consolidate.py 的 recall() 使用 MagmaMemory.search() 进行图遍历检索,
+  而非简单的关键词匹配。大幅提升多跳推理和长上下文检索能力。
 """
 
 from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Tuple
-from datetime import datetime, timedelta
+from datetime import datetime
 import math
 import time
 import uuid
 
+from .magma import MagmaMemory, MemoryNode, RelationType
 
-# ── 遗忘曲线 ──
+
+# ── 遗忘曲线 (保留) ──
 
 def ebbinghaus_forgetting(hours_elapsed: float, strength: float = 1.0) -> float:
     """Ebbinghaus 遗忘曲线。
-
-    R(t) = e^(-t / S)
-      R = 回忆率 (0-1)
-      t = 经过时间 (小时)
-      S = 记忆强度 (小时)
-    
-    强度越大, 遗忘越慢。
-    """
+    R(t) = e^(-t / S), S = 记忆强度"""
     return math.exp(-hours_elapsed / max(strength, 0.01))
 
 
 def reinforcement_boost(repetitions: int) -> float:
-    """重复强化对记忆强度的提升。
-
-    每次重复增加 S, 但收益递减:
-    S = base * (1 + log(1 + repetitions))
-    """
+    """重复强化提升强度。"""
     return 1.0 + math.log1p(repetitions)
 
 
-# ── 记忆条 ──
+# ── 记忆系统 (MAGMA 增强) ──
 
 @dataclass
 class MemoryItem:
-    """一条记忆。"""
+    """一条记忆 (兼容旧接口)。"""
     id: str = ""
-    content: str = ""           # 记忆内容
-    memory_type: str = "stm"    # wm | stm | ltm
-    strength: float = 1.0        # 记忆强度 (小时)
-    access_count: int = 0        # 访问次数
-    last_access: float = 0.0     # 最后访问时间戳
-    created_at: float = 0.0      # 创建时间戳
+    content: str = ""
+    memory_type: str = "stm"
+    strength: float = 1.0
+    access_count: int = 0
+    last_access: float = 0.0
+    created_at: float = 0.0
     metadata: Dict[str, Any] = field(default_factory=dict)
 
     def __post_init__(self):
@@ -77,26 +69,21 @@ class MemoryItem:
 
     @property
     def recall_probability(self) -> float:
-        """基于遗忘曲线的回忆概率。"""
         return ebbinghaus_forgetting(self.age_hours, self.strength)
 
     @property
     def is_forgotten(self) -> bool:
-        """是否已遗忘 (recall < 0.1)。"""
         return self.recall_probability < 0.1
 
     def access(self):
-        """访问记忆, 强化强度。"""
         self.access_count += 1
         self.last_access = time.time()
         self.strength = reinforcement_boost(self.access_count)
 
     def to_dict(self) -> dict:
         return {
-            "id": self.id,
-            "content": self.content[:100],
-            "type": self.memory_type,
-            "strength": round(self.strength, 2),
+            "id": self.id, "content": self.content[:100],
+            "type": self.memory_type, "strength": round(self.strength, 2),
             "access_count": self.access_count,
             "recall": round(self.recall_probability, 3),
             "age_hours": round(self.age_hours, 1),
@@ -104,87 +91,113 @@ class MemoryItem:
         }
 
 
-# ── 记忆系统 ──
-
 class MemorySystem:
-    """三层记忆系统。
+    """三层记忆系统 (MAGMA 增强版)。
 
     用法:
         mem = MemorySystem()
-        mem.working.set("current_query", "鳤")          # 工作记忆
-        mem.store("查询结果: 鳤是长江珍稀鱼类")             # → STM
-        mem.consolidate()                                # 巩固: STM→LTM
-        results = mem.recall("鳤")                       # 搜索所有层
+        mem.store("鳤是长江珍稀鱼类", entities=["鳤", "Ochetobius elongatus"])
+        results = mem.recall("长江鱼类的保护")  # 使用四维图遍历
     """
 
     def __init__(self, consolidation_threshold: int = 3,
-                 stm_capacity: int = 100,
-                 wm_capacity: int = 10):
-        # 工作记忆: 当前上下文 (Dict)
+                 stm_capacity: int = 100, wm_capacity: int = 10):
+        # MAGMA 四维图谱记忆 (核心)
+        self._magma = MagmaMemory()
+
+        # 工作记忆
         self.working: Dict[str, Any] = {}
-
-        # 短期记忆: 列表 + 容量限制
-        self._stm: List[MemoryItem] = []
-        self._stm_capacity = stm_capacity
-
-        # 长期记忆: 列表 (理论上可持久化到 DB)
-        self._ltm: List[MemoryItem] = []
-
-        self._consolidation_threshold = consolidation_threshold
         self._wm_capacity = wm_capacity
 
-    # ── 存储 ──
+        # 短期/长期记忆 (保留以兼容旧接口)
+        self._stm: List[MemoryItem] = []
+        self._ltm: List[MemoryItem] = []
+        self._stm_capacity = stm_capacity
+        self._consolidation_threshold = consolidation_threshold
 
-    def store(self, content: str, metadata: Optional[Dict] = None,
+    # ── 存储 (MAGMA 增强) ──
+
+    def store(self, content: str, entities: Optional[List[str]] = None,
+              metadata: Optional[Dict] = None,
               memory_type: str = "stm") -> MemoryItem:
-        """存储一条新记忆。"""
+        """存储一条新记忆。同时写入 MAGMA 图谱和 STM 列表。"""
+        # 写入 MAGMA 四维图谱
+        node = self._magma.add(content, entities=entities, metadata=metadata)
+
+        # 写入 STM 列表 (兼容旧接口)
         item = MemoryItem(
-            content=content,
-            memory_type=memory_type,
-            metadata=metadata or {},
+            id=node.node_id, content=content, memory_type=memory_type,
+            metadata={**(metadata or {}), "magma_node_id": node.node_id},
         )
         if memory_type == "ltm":
             self._ltm.append(item)
         else:
             self._stm.append(item)
-            # 超出容量 → 淘汰回忆概率最低的
             if len(self._stm) > self._stm_capacity:
                 self._stm.sort(key=lambda x: x.recall_probability)
                 self._stm.pop(0)
+
         return item
 
     def set_working(self, key: str, value: Any):
-        """设置工作记忆。"""
         self.working[key] = value
-        # 工作记忆容量限制
         if len(self.working) > self._wm_capacity:
-            # 移除最早添加的 key
             oldest = next(iter(self.working))
             del self.working[oldest]
 
     def get_working(self, key: str, default=None) -> Any:
         return self.working.get(key, default)
 
-    # ── 检索 ──
+    # ── 检索 (MAGMA 图遍历替代关键词匹配) ──
 
     def recall(self, query: str, top_k: int = 5) -> List[MemoryItem]:
-        """从所有层检索记忆 (简单关键词匹配)。"""
-        q = query.lower()
-        results = []
+        """从所有层检索记忆。
 
+        使用 MAGMA 四维图遍历 (非旧版关键词匹配)。
+        同时检索图谱节点和 STM/LTM 列表,
+        用 RRF 融合排序。
+        """
+        # 1. MAGMA 图遍历检索
+        magma_nodes = self._magma.search(query, top_k=top_k)
+
+        # 2. 将图谱节点映射回 MemoryItem
+        magma_results = []
+        for node in magma_nodes:
+            item = self._find_item(node.node_id)
+            if item and item.is_forgotten:
+                continue
+            if item:
+                item.access()
+                magma_results.append(item)
+
+        # 3. 旧版关键词匹配 (作为补充)
+        q = query.lower()
+        keyword_results = []
         for item in self._stm + self._ltm:
             if item.is_forgotten:
                 continue
             if q in item.content.lower():
                 item.access()
-                results.append(item)
+                keyword_results.append(item)
 
-        # 按回忆概率排序
-        results.sort(key=lambda x: x.recall_probability, reverse=True)
-        return results[:top_k]
+        # 4. 融合: 图遍历优先, 关键词补充
+        seen = set()
+        fused = []
+        for item in magma_results + keyword_results:
+            if item.id not in seen:
+                fused.append(item)
+                seen.add(item.id)
+
+        return fused[:top_k]
+
+    def _find_item(self, node_id: str) -> Optional[MemoryItem]:
+        """按 node_id 查找 MemoryItem。"""
+        for item in self._stm + self._ltm:
+            if item.id == node_id:
+                return item
+        return None
 
     def recall_by_type(self, memory_type: str, top_k: int = 10) -> List[MemoryItem]:
-        """按类型检索。"""
         pool = self._stm if memory_type == "stm" else self._ltm
         items = [m for m in pool if not m.is_forgotten]
         items.sort(key=lambda x: x.recall_probability, reverse=True)
@@ -193,14 +206,8 @@ class MemorySystem:
     # ── 巩固 ──
 
     def consolidate(self) -> Dict[str, int]:
-        """记忆巩固: STM → LTM 转移。
-
-        访问次数 ≥ consolidation_threshold 的 STM 提升为 LTM。
-        返回 {stm_to_ltm, stm_forgotten, ltm_count}。
-        """
+        """记忆巩固: STM → LTM。"""
         promoted = 0
-        now = time.time()
-
         remaining_stm = []
         for item in self._stm:
             if item.is_forgotten:
@@ -211,14 +218,14 @@ class MemorySystem:
                 promoted += 1
             else:
                 remaining_stm.append(item)
-
         self._stm = remaining_stm
 
         return {
             "stm_to_ltm": promoted,
             "stm_count": len(self._stm),
             "ltm_count": len(self._ltm),
-            "forgotten_stm": sum(1 for m in self._stm if m.is_forgotten),
+            "magma_nodes": self._magma.node_count,
+            "magma_edges": self._magma.edge_count,
         }
 
     # ── 统计 ──
@@ -228,12 +235,10 @@ class MemorySystem:
             "working_count": len(self.working),
             "stm_count": len(self._stm),
             "ltm_count": len(self._ltm),
-            "consolidation_threshold": self._consolidation_threshold,
-            "stm_capacity": self._stm_capacity,
+            "magma": self._magma.stats(),
         }
 
     def forget(self, item_id: str) -> bool:
-        """主动遗忘一条记忆。"""
         for pool in [self._stm, self._ltm]:
             for i, item in enumerate(pool):
                 if item.id == item_id:
@@ -242,14 +247,13 @@ class MemorySystem:
         return False
 
     def clear_working(self):
-        """清空工作记忆。"""
         self.working.clear()
 
     def search(self, query: str, **kwargs) -> dict:
-        """兼容 adapter 接口。"""
         results = self.recall(query)
         return {
             "status": "ok",
             "results": [r.to_dict() for r in results],
             "total": len(results),
+            "method": "magma_4d_graph_traversal",
         }

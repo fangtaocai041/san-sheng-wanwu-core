@@ -8,7 +8,9 @@ memory — 记忆与知识存储
                   SpeciesVariants    — 物种拼写变体注册表
                   核心类型: AnalysisFinding, SourceEntry, ResearchContext ...
   cache.py      搜索缓存 (LRU, 24h TTL)
-  consolidate.py 记忆巩固系统 (STM/LTM + 遗忘曲线 + 巩固过程)
+  consolidate.py 记忆巩固系统 (MAGMA 四维图谱 + WM/STM/LTM)
+  magma.py      四维正交图谱记忆引擎 (语义/时序/因果/实体)
+  persistence.py 状态持久化 (SQLite)
 """
 
 from .kb import (
@@ -25,6 +27,7 @@ from .kb import (
 )
 from .cache import SearchCache
 from .consolidate import MemorySystem, MemoryItem, ebbinghaus_forgetting, reinforcement_boost
+from .magma import MagmaMemory, MemoryNode, Relation, RelationType
 from .persistence import PersistenceEngine, AgentSnapshot
 
 __all__ = [
@@ -41,4 +44,6 @@ __all__ = [
     "SearchCache",
     "MemorySystem", "MemoryItem",
     "ebbinghaus_forgetting", "reinforcement_boost",
+    "MagmaMemory", "MemoryNode", "Relation", "RelationType",
+    "PersistenceEngine", "AgentSnapshot",
 ]
