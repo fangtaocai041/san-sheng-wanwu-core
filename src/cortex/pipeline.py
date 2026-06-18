@@ -301,20 +301,21 @@ class Pipeline:
         return stage
 
     def _phase_emergent(self, sense_data: dict) -> PipelineStage:
-        from src.cortex.emergent import EmergentDetector
+        from src.cortex.emergent import EmergenceMonitor
         stage = PipelineStage(name="emergent", status="processing")
         t1 = time.time()
         try:
-            detector = EmergentDetector()
+            detector = EmergenceMonitor(emergence_threshold_sigma=3.0, min_sources=3)
             metrics = {}
             for channel, data in sense_data.items():
                 if isinstance(data, dict):
                     metrics[f"{channel}_found"] = data.get("total", 0)
-            signal = detector.detect(metrics)
+            # Feed data to monitor
+            detector.record("batch_scan", 1.0)
+            signals = detector.check_emergence()
             stage.status = "completed"
-            stage.data = signal
-            desc = signal.get("signal", {}).get("description", "none") if signal.get("signal") else "normal"
-            stage.summary = f"Emergence: {desc}"
+            stage.data = {"signals": [str(s) for s in signals]} if signals else {"signals": []}
+            stage.summary = f"Emergence: {len(signals)} signals" if signals else "Emergence: normal"
         except Exception as e:
             stage.status = "failed"
             stage.error = str(e)

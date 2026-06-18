@@ -25,6 +25,7 @@ from .kb import (
 )
 from .cache import SearchCache
 from .consolidate import MemorySystem, MemoryItem, ebbinghaus_forgetting, reinforcement_boost
+from .persistence import PersistenceEngine, AgentSnapshot
 
 __all__ = [
     "KnowledgeDB", "get_db",
