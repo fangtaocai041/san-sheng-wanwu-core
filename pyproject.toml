@@ -1,10 +1,10 @@
 [build-system]
 requires = ["setuptools>=68"]
-build-backend = "setuptools.backends._legacy:_Backend"
+build-backend = "setuptools.build_meta"
 
 [project]
 name = "san-sheng-wanwu-core"
-version = "0.2.0"
+version = "1.0.0"
 description = "三生万物·硅基生命体 — 统一物种智能分析核心"
 readme = "README.md"
 license = { text = "MIT" }
@@ -14,11 +14,11 @@ dependencies = [
 ]
 
 [project.scripts]
-silicon-agent = "src.main:main"
+silicon-agent = "src.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src", "src/memory/kb"]
-include = ["src*", "fishkb"]
+include = ["src*", "fishkb*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

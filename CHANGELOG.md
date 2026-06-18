@@ -4,6 +4,46 @@
 
 ---
 
+## v1.0.0 — 2026-06-19
+
+### 🎉 正式版发布
+
+从 v0.2.0 到 v1.0.0 新增:
+
+**运行时**
+- `src/main.py`: 交互/守护/状态/查询四模式
+- `SiliconAgent` 生命周期: wake() → run() → sleep()
+- `pip install -e .` 后可用 `silicon-agent` 命令
+- 自动保存: 每 120s 持久化全部状态到 SQLite
+
+**持久化**
+- `memory/persistence.py`: 灵魂/情感/记忆/来源/学习历史 → SQLite
+- `AgentSnapshot`: 完整状态容器
+
+**12 学科领域感受器**
+- `senses/domains.py`: 数/理/化/生/计算机/心理/哲学/中国哲学/马/经济/文学/科幻
+- 内置 120+ 核心概念 + 77 关键思想家
+- ChinesePhilosophySense: 道/儒/儒释道三教合一
+
+**MCP 接线指南**
+- `docs/MCP_WIRING_GUIDE.md`: 所有 17 个感受器的外部工具连接方式
+
+**工程**
+- 版本号 0.2.0 → 1.0.0
+- pyproject.toml 修复 console_scripts 入口
+- README 完整 API 参考 (14 皮层模块 + 4 记忆模块 + 17 感受器)
+- 身份文档集: SOUL.md / AGENTS.md / TOOLS.md / USER.md / HEARTBEAT.md
+
+### 指标
+
+```
+皮层: 14 模块 | 感知: 17 通道 | 记忆: 4 层
+测试: 130/130 | 架构: 36/36 | 知识库: 430 种鱼类
+学科概念: 120+ | 思想家: 77 位
+```
+
+---
+
 ## v0.2.0 — 2026-06-19
 
 ### 🧬 14 皮层模块完成
