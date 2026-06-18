@@ -1,0 +1,84 @@
+# san-sheng-wanwu-core 生态系统拓扑
+# 定义硅基生命体的器官分布与能量流通道
+
+version: "0.2.0"
+system_name: "san-sheng-wanwu-core"
+
+# ── 感受器 (Senses) — 对外感知通道 ──
+senses:
+  scholar:
+    name: "学术文献感受器"
+    mcp: ["scholar-mcp", "article-mcp"]
+    modality: "学术话语空间感知"
+    rate_limit: 100  # 每分钟最大查询
+  cnki:
+    name: "中文知网感受器"
+    mcp: ["cnki-mcp"]
+    modality: "中文科学话语感知"
+    rate_limit: 30
+  ncbi:
+    name: "生命科学感受器"
+    mcp: ["ncbi-mcp"]
+    modality: "生物医学文献感知"
+    rate_limit: 50
+  fishbase:
+    name: "鱼类性状感受器"
+    mcp: ["fishbase-scraper"]
+    modality: "物种形态学参数感知"
+    rate_limit: 60
+  web:
+    name: "通用网络感受器"
+    mcp: ["tavily-mcp", "exa-mcp"]
+    modality: "实时网络信息感知"
+    rate_limit: 20
+
+# ── 皮层 (Cortex) — 认知处理模块 ──
+cortex:
+  dialectics:
+    name: "辩证综合皮层"
+    input: "多源声明"
+    output: "综合判断"
+    modes: ["weighted", "circuit"]
+  validate:
+    name: "文献验证皮层"
+    input: "原始论文数据"
+    output: "可信度评分"
+    trust_levels: 5
+  emergent:
+    name: "涌现检测皮层"
+    input: "监控指标流"
+    output: "D1/D2/D3 信号"
+    dimensions: 3
+  pipeline:
+    name: "执行链调度器"
+    stages: ["sense", "kb_lookup", "validate", "dialectics", "emergent", "report"]
+
+# ── 记忆 (Memory) — 知识存储 ──
+memory:
+  kb:
+    name: "物种知识库"
+    type: "SQLite FTS5"
+    species_count: 30  # 本地已知物种数
+    source: "fish-ecology-assistant/fishkb"
+  cache:
+    name: "搜索缓存"
+    type: "LRU Dict"
+    ttl_hours: 24
+
+# ── 运动 (Motor) — 输出通道 ──
+motor:
+  report:
+    name: "报告生成器"
+    formats: ["markdown", "json"]
+  visualize:
+    name: "数据可视化"
+    formats: ["radar", "area", "heatmap"]
+
+# ── 能量流通道 ──
+pathways:
+  species_research: ["sense:scholar", "sense:cnki", "sense:ncbi",
+                     "cortex:kb_lookup", "cortex:validate",
+                     "cortex:dialectics", "cortex:emergent",
+                     "motor:report"]
+  quick_lookup: ["sense:kb_lookup", "motor:report"]
+  monitor: ["cortex:emergent"]

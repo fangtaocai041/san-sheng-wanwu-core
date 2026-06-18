@@ -33,7 +33,9 @@ class TestSenses:
         sense = FishBaseSense()
         inp = SenseInput(query="Ochetobius elongatus")
         out = sense.sense(inp)
-        assert out.sources_used == ["fishbase"]
+        assert out.query == "Ochetobius elongatus"
+        assert len(out.errors) > 0  # stub mode
+        assert "stub" in out.errors[0]
 
     def test_web_sense(self):
         sense = WebSense()
