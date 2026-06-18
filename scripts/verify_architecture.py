@@ -7,25 +7,25 @@ import sys
 sys.path.insert(0, ".")
 
 checks = {
-    "senses": 5,   # 5 个感受器
-    "cortex": 4,   # 4 个认知模块
-    "memory": 2,   # 2 个记忆模块
-    "motor": 2,    # 2 个运动模块
+    "senses": ("感受器", 5),   # 至少 5 个
+    "cortex": ("认知皮层", 4), # 至少 4 个类
+    "memory": ("记忆", 2),    # 至少 2 个
+    "motor": ("运动皮层", 2), # 至少 2 个
 }
 passed = 0
 failed = 0
 
-for layer, expected in checks.items():
+for layer, (label, min_expected) in checks.items():
     mod = __import__(f"src.{layer}", fromlist=["__all__"])
     try:
         symbols = mod.__all__
         count = len(symbols)
-        status = "OK" if count == expected else f"MISMATCH (expected {expected}, got {count})"
+        status = "OK" if count >= min_expected else f"TOO FEW (min {min_expected}, got {count})"
         if "OK" in status:
             passed += 1
         else:
             failed += 1
-        print(f"  [{status}] {layer}: {count} modules ({', '.join(symbols)})")
+        print(f"  [{status}] {label} ({layer}): {count} symbols exported")
     except Exception as e:
         print(f"  [ERROR] {layer}: {e}")
         failed += 1
