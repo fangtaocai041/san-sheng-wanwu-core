@@ -2,7 +2,7 @@
 import sys
 sys.path.insert(0, ".")
 
-from src.memory.kb import KnowledgeBase
+from src.memory.kb import KnowledgeDB, CredibilityScorer, SpeciesVariants
 from src.memory.cache import SearchCache
 from src.motor.report import ReportGenerator
 from src.motor.visualize import Visualizer
@@ -25,6 +25,15 @@ class TestMemory:
         cache.set("a", "", {"x": 1})
         cache.clear()
         assert cache.size == 0
+
+    def test_credibility_scorer_importable(self):
+        assert CredibilityScorer is not None
+
+    def test_species_variants_importable(self):
+        assert SpeciesVariants is not None
+
+    def test_knowledge_db_importable(self):
+        assert KnowledgeDB is not None
 
 
 class TestReport:
