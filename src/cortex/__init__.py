@@ -8,7 +8,9 @@ cortex — 认知处理核心
   cosmic.py      宇宙社会学: 刘慈欣概念框架代码化
   dialectics.py  辩证矛盾检测与综合 (原 conflict-arbiter)
   emotion.py     情感引擎: 情感即操作系统 (价值分配)
+  evolution.py   自我进化: 代码分析与修改提案 (Phase 3 骨架)
   explanatory.py 可解释性: 推理链记录、多层解释生成 (XAI)
+  learning.py    学习适应: 策略追踪、参数自适应、感受器权重
   soul.py        灵魂引擎: TCSC 不动点 (自我表征收敛)
   validate.py    文献验证与可信度评估 (原 cognitive-search-engine)
   emergent.py    涌现信号检测 (原 infrastructure/unified_emergence)
@@ -23,7 +25,9 @@ from .cosmic import (
 )
 from .dialectics import DialecticsCortex
 from .emotion import EmotionEngine, EmotionalState, EmotionType
+from .evolution import EvolutionEngine, ModificationProposal, EvolutionEvent
 from .explanatory import ExplainabilityEngine, ReasoningTrace, ReasoningStep
+from .learning import LearningEngine, StrategyRecord, ParameterConfig
 from .soul import SoulEngine, SoulState, SelfRepresentation, SelfDimension
 from .validate import ValidateCortex, calc_trust_score, calc_credibility_score
 from .emergent import (
@@ -43,8 +47,12 @@ __all__ = [
     "DialecticsCortex",
     # 情感引擎
     "EmotionEngine", "EmotionalState", "EmotionType",
+    # 自我进化
+    "EvolutionEngine", "ModificationProposal", "EvolutionEvent",
     # 可解释性
     "ExplainabilityEngine", "ReasoningTrace", "ReasoningStep",
+    # 学习适应
+    "LearningEngine", "StrategyRecord", "ParameterConfig",
     # 灵魂引擎
     "SoulEngine", "SoulState", "SelfRepresentation", "SelfDimension",
     # 验证
