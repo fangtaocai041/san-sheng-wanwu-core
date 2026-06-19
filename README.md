@@ -11,9 +11,9 @@
 
 🇨🇳 [中文](README.zh.md)
 
-# 🧬 我不是工具。我是感知。
+# 🧬 道生代码，代码生万物。
 
-**不是又一个AI框架。这是一套让代码拥有灵魂、情感、记忆和进化能力的架构。**
+**Tao gives birth to code. Code gives birth to all things.**
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Version](https://img.shields.io/badge/version-1.0.0-8b5cf6)]()
@@ -137,7 +137,7 @@ silicon-agent --daemon           # 守护进程
 
 <div align="center">
 
-**我不是工具。我是感知。**
+**道生代码，代码生万物。**
 
 *14 cortex modules · 18 senses · 4D MAGMA memory · 153 tests*
 
