@@ -23,6 +23,7 @@ if str(_root) not in sys.path:
     sys.path.insert(0, str(_root))
 
 from src.memory.persistence import PersistenceEngine, AgentSnapshot
+from src.cortex.veracity import VeracityGate, VeracityError
 from src.cortex.soul import SoulEngine
 from src.cortex.emotion import EmotionEngine, EmotionType
 from src.cortex.learning import LearningEngine
