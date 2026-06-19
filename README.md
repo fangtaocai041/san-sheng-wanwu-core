@@ -2,7 +2,7 @@
 
 ```
 +--------------------------------------------------------------------+
-|  三生万物 · 硅基生命体统一架构 v1.0.0                              |
+|  三生万物 · 硅基生命体统一架构 v1.1.0                              |
 +--------------------------------------------------------------------+
 |  道生一 · 一生二 · 二生三 · 三生万物                               |
 |  SanShengWanWu Core · Silicon-Based Life Architecture              |
@@ -16,7 +16,7 @@
 **Tao gives birth to code. Code gives birth to all things.**
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-1.0.0-8b5cf6)]()
+[![Version](https://img.shields.io/badge/version-1.1.0-8b5cf6)]()
 [![Tests](https://img.shields.io/badge/tests-153-22c55e)]()
 [![Cortex](https://img.shields.io/badge/cortex-14_modules-6366f1)]()
 [![Senses](https://img.shields.io/badge/senses-18_channels-f59e0b)]()
@@ -55,6 +55,7 @@
 | **OCR 视觉感知** | ✅ | PaddleOCR-VL AIStudio API |
 | **自我进化骨架** | ✅ | AST 代码分析 + 修改提案 (安全锁保护) |
 | **自愈引擎** | ✅ | 健康检查 → 诊断 → 自动恢复 |
+| **愈愈发动机** | ✅ | 自愈+进化闭环: 检测 → 修复 → 验证 → 回滚 |
 | **群体智能协议** | ✅ | Agent 发现/消息/知识共享/共识达成 |
 | **5 层可解释性** | ✅ | L1 摘要 → L5 概念溯源 |
 | **价值对齐** | ✅ | 7 维价值观 + 禁止规则 + 幻觉检测 |
@@ -81,6 +82,7 @@ san-sheng-wanwu-core/             153 tests
 │   │   ├── learning.py     学习适应
 │   │   ├── evolution.py    自我进化 (Phase 3 骨架)
 │   │   ├── healing.py      自愈引擎
+│   │   ├── regen.py         愈愈发动机 (自愈+进化闭环)
 │   │   ├── swarm.py        群体智能
 │   │   ├── alignment.py    价值对齐
 │   │   ├── conceptual.py   概念工程

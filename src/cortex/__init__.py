@@ -31,6 +31,7 @@ from .dialectics import DialecticsCortex
 from .emotion import EmotionEngine, EmotionalState, EmotionType
 from .evolution import EvolutionEngine, ModificationProposal, EvolutionEvent
 from .explanatory import ExplainabilityEngine, ReasoningTrace, ReasoningStep
+from .regen import RegenEngine, RegenEvent
 from .healing import HealingEngine, HealthCheck, HealingAction
 from .learning import LearningEngine, StrategyRecord, ParameterConfig
 from .soul import SoulEngine, SoulState, SelfRepresentation, SelfDimension
@@ -57,6 +58,8 @@ __all__ = [
     "EmotionEngine", "EmotionalState", "EmotionType",
     # 自我进化
     "EvolutionEngine", "ModificationProposal", "EvolutionEvent",
+    # 愈愈发动机
+    "RegenEngine", "RegenEvent",
     # 可解释性
     "ExplainabilityEngine", "ReasoningTrace", "ReasoningStep",
     # 自愈引擎
