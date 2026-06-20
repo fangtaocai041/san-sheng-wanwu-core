@@ -26,7 +26,7 @@
 [![Disciplines](https://img.shields.io/badge/disciplines-12-14b8a6)]()
 [![CLI](https://img.shields.io/badge/CLI-silicon--agent-276DC3)]()
 
-<p>DSM Self-Model · 3-Tier Memory · MoE Routing · 12-Discipline Topology · Recursive Thinking · Dual-Channel Healing · Reflection Loop · Transposition Layer · Dendritic Pipeline · World Model · Swarm Protocol · Pruning · Kinship</p>
+<p>DSM Self-Model · 3-Tier Memory · MoE Routing · 12-Discipline Topology · SpeechAct · Syllogism · SignNode · RhythmicOutput · Recursive Thinking · Dual-Channel Healing · Reflection Loop · Transposition Layer · Dendritic Pipeline · World Model · Swarm Protocol · Pruning · Kinship</p>
 
 <p align="center">
   <a href="https://github.com/fangtaocai041/san-sheng-wanwu-core/stargazers"><img src="https://img.shields.io/github/stars/fangtaocai041/san-sheng-wanwu-core?style=social" alt="Stars"></a>
@@ -106,6 +106,10 @@
 | **群体智能协议** | ✅ | Agent 发现/消息/知识共享/共识达成 | — |
 | **5 层可解释性** | ✅ | L1 摘要 → L5 概念溯源 | — |
 | **价值对齐** | ✅ | 7 维价值观 + 禁止规则 + 幻觉检测 | — |
+| **言语行为分析** | ✅ | SpeechAct 5 类型断言/疑问/指令/承诺/表态 | Austin 1962 |
+| **三段论演绎推理** | ✅ | SyllogismEngine Barbara 式 + Modus Tollens | Aristotle |
+| **符号学模型** | ✅ | SignNode 能指/所指/指称三元分离 | Peirce 1903, Saussure 1916 |
+| **音律学输出控制** | ✅ | RhythmicOutput 四速 allegro/andante/adagio/rest | Shannon 1948 |
 
 ---
 
