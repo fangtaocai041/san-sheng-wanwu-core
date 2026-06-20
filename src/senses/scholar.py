@@ -27,6 +27,7 @@ class SenseInput:
     """统一的感受器输入格式。"""
     query: str
     species: Optional[str] = None
+    speech_act: str = "assertion"  # assertion|question|directive|commissive|expressive
     max_results: int = 10
     sources: List[str] = field(default_factory=lambda: ["crossref", "openalex", "google_scholar"])
     time_range: Optional[tuple] = None  # (start_year, end_year)

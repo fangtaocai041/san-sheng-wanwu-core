@@ -183,12 +183,20 @@ class Pipeline:
         sense_data = result.stages["sense"].data
         result.stages["kb_lookup"] = self._phase_kb_lookup(query, species)
 
+        # 言语行为检测 + 三段论演绎
+        from src.cortex.pragmatics import detect_speech_act
+        speech_act = detect_speech_act(query)
+        result.stages["pragmatics"] = PipelineStage(
+            name="pragmatics", status="completed",
+            summary=f"SpeechAct: {speech_act}",
+            data={"speech_act": speech_act},
+        )
+        result.stages["deduction"] = self._phase_deduction(query, species, speech_act)
+
         # Phase 2a: 分支认知 (Dendritic Branch Cognition)
-        # 每个感知通道独立进行辩证综合，模拟树突分支的独立计算
         result.stages["branch_cognition"] = self._phase_branch_cognition(sense_data)
 
         # Phase 2b: 分支汇聚 (Dendritic Branch Convergence)
-        # 所有分支结果汇聚融合，模拟胞体级的信号整合
         result.stages["branch_convergence"] = self._phase_branch_convergence(sense_data)
 
         result.stages["validate"] = self._phase_validate(sense_data)
@@ -262,6 +270,72 @@ class Pipeline:
         except Exception as e:
             stage.status = "failed"
             stage.error = str(e)
+        stage.duration_ms = round((time.time() - t1) * 1000, 1)
+        return stage
+
+    def _phase_deduction(self, query: str, species: str,
+                         speech_act: str) -> PipelineStage:
+        """三段论演绎推理 — 从 KB 推导隐含结论。
+
+        如果演绎成功，可以减少不必要的搜索。
+        对应: 逻辑学三段论 Barbara (AAA-1)
+        """
+        stage = PipelineStage(name="deduction", status="processing")
+        t1 = time.time()
+
+        try:
+            from src.cortex.pragmatics import SyllogismEngine
+            engine = SyllogismEngine()
+
+            # 从 KB 加载前提
+            kb = get_knowledge_base()
+            species_name = species or query
+            row = None
+            try:
+                row = kb.conn.execute(
+                    "SELECT scientific, chinese, family, ecology FROM species "
+                    "WHERE scientific=? OR chinese=? LIMIT 1",
+                    (species_name, query)
+                ).fetchone()
+            except Exception:
+                pass
+
+            if row:
+                family = row["family"] if row["family"] else ""
+                ecology = row["ecology"] if row["ecology"] else ""
+                if family:
+                    engine.add_premise_from_kb = True
+                    from src.cortex.pragmatics import Premise
+                    engine._premises.append(Premise(
+                        species_name, f"属于{family}科",
+                        source="kb", confidence=0.9
+                    ))
+                if ecology:
+                    from src.cortex.pragmatics import Premise
+                    engine._premises.append(Premise(
+                        species_name, ecology[:80],
+                        source="kb", confidence=0.8
+                    ))
+
+            # 对断言和疑问句优先尝试演绎
+            deduced = None
+            if speech_act in ("assertion", "question"):
+                predicates = ["鱼类", "洄游", "淡水鱼", "濒危", "保护"]
+                results = engine.batch_deduce(species_name, predicates)
+                if results:
+                    deduced = [r.conclusion for r in results if r.confidence > 0.7]
+
+            stage.status = "completed"
+            stage.data = {
+                "premises": len(engine._premises),
+                "deduced": deduced or [],
+            }
+            stage.summary = f"Deduction: {len(engine._premises)} premises, {len(deduced or [])} deduced"
+
+        except Exception as e:
+            stage.status = "failed"
+            stage.error = str(e)
+
         stage.duration_ms = round((time.time() - t1) * 1000, 1)
         return stage
 

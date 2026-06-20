@@ -189,6 +189,31 @@ class MemoryNode:
 
 
 @dataclass
+class SignNode(MemoryNode):
+    """符号学节点 — Peirce 三元符号模型。
+
+    语言学/符号学扩展:
+      sign_type: icon | index | symbol
+      signifier:  能指 — 符号本身 ("鳤" 这个字)
+      signified:  所指 — 概念 ("一种长江珍稀鱼类")
+      referent:   指称对象 — 外部世界实体 ("Ochetobius elongatus")
+
+    示例:
+      node = SignNode(content="鳤是一种珍稀鱼类",
+                      sign_type="symbol",
+                      signifier="鳤",
+                      signified="长江珍稀鱼类",
+                      referent="Ochetobius elongatus")
+
+    参考: Peirce (1903), Saussure (1916)
+    """
+    sign_type: str = "symbol"    # icon | index | symbol
+    signifier: str = ""           # 能指
+    signified: str = ""           # 所指
+    referent: str = ""            # 指称对象
+
+
+@dataclass
 class Relation:
     source_id: str
     target_id: str
