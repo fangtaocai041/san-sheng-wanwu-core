@@ -23,13 +23,15 @@ san-sheng-wanwu-core/
 │   └── pipeline.py    执行链调度器 — 感知→认知→行动循环
 │
 ├── src/memory/     ← 记忆 — 存储知识、缓存感知结果
-│   ├── kb/            物种知识库子包 (SQLite FTS5 全文搜索)
+│   ├── kb/            物种知识库子包 (SQLite FTS5 全文搜索 + MoE 路由)
 │   │   ├── db.py          KnowledgeDB — 存储/搜索/写回
-│   │   ├── search.py      FishSpeciesMatcher — 模糊匹配
+│   │   ├── search.py      FishSpeciesMatcher + KnowledgeRouter — 模糊匹配 + 专家路由
 │   │   ├── credibility.py CredibilityScorer — 三角验证
 │   │   ├── variants.py    SpeciesVariants — 拼写变体
 │   │   └── types.py       核心数据类型
-│   └── cache.py       搜索缓存 (24h TTL)
+│   ├── magma.py        嵌套记忆层级 — Hot(5min)/Warm(24h)/Cold(永久)
+│   ├── consolidate.py  记忆巩固 — 多层遗忘曲线 + 层级晋升
+│   └── cache.py        搜索缓存 (24h TTL)
 │
 ├── src/motor/      ← 运动皮层 — 输出行动
 │   ├── report.py      报告生成 (markdown/json)
@@ -40,7 +42,7 @@ san-sheng-wanwu-core/
 │   ├── species_variants.yaml  物种拼写变体注册表
 │   └── knowledge_base/species/  30 个物种知识 Markdown
 │
-└── tests/           ← 免疫系统 — 31 项自检套件
+└── tests/           ← 免疫系统 — 169 项自检套件
 ```
 
 ## 2. 感知-行动循环

@@ -54,4 +54,6 @@ class TestSemanticEncoder:
         n1 = mem.add("长江鱼类资源调查与评估方法")
         n2 = mem.add("长江鱼类资源的调查评估报告")
         stats = mem.stats()
-        assert stats["graphs"]["semantic"] >= 1
+        # v2.0: stats["graphs"] 按 tier 嵌套
+        semantic_edges = sum(stats["graphs"][t]["semantic"] for t in stats["graphs"])
+        assert semantic_edges >= 1

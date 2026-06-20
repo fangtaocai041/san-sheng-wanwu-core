@@ -523,3 +523,68 @@ def create_domain(name: str, search_fn=None) -> Optional[DomainSense]:
     if cls:
         return cls(search_fn=search_fn)
     return None
+
+
+# ═══════════════════════════════════════════════════════════
+# 跨学科拓扑权重矩阵
+# 参考: TopoNets (ICLR 2025 Spotlight) — 拓扑组织提升 20% 效率
+# ═══════════════════════════════════════════════════════════
+
+# 定义: w_ij = 学科 i 和学科 j 之间的连接强度 [0, 1]
+# 自连接 = 1.0 (同一学科内的概念应该嵌入更近)
+# 强关联 > 0.6 (频繁共现、互相引用)
+# 弱关联 < 0.3 (偶尔交叉)
+# 无关联 = 0.0 (几乎不相关)
+
+DOMAIN_TOPOLOGY_MATRIX: Dict[str, Dict[str, float]] = {
+    "math":             {"math": 1.0, "physics": 0.8, "cs": 0.7, "economics": 0.4,
+                         "philosophy": 0.3, "chemistry": 0.3, "biology": 0.2},
+    "physics":          {"physics": 1.0, "math": 0.8, "chemistry": 0.6, "cs": 0.4,
+                         "philosophy": 0.4, "scifi": 0.3, "biology": 0.2},
+    "chemistry":        {"chemistry": 1.0, "physics": 0.6, "biology": 0.5,
+                         "math": 0.3, "philosophy": 0.1},
+    "biology":          {"biology": 1.0, "chemistry": 0.5, "psychology": 0.4,
+                         "scifi": 0.3, "philosophy": 0.3, "cs": 0.2, "math": 0.2},
+    "cs":               {"cs": 1.0, "math": 0.7, "physics": 0.4, "psychology": 0.4,
+                         "scifi": 0.4, "philosophy": 0.3, "biology": 0.2},
+    "psychology":       {"psychology": 1.0, "biology": 0.4, "cs": 0.4, "philosophy": 0.5,
+                         "literature": 0.3, "economics": 0.3},
+    "philosophy":       {"philosophy": 1.0, "chinese_philosophy": 0.7, "marxism": 0.6,
+                         "psychology": 0.5, "physics": 0.4, "cs": 0.3, "literature": 0.4,
+                         "math": 0.3, "biology": 0.3, "scifi": 0.3},
+    "chinese_philosophy": {"chinese_philosophy": 1.0, "philosophy": 0.7, "marxism": 0.4,
+                           "literature": 0.5, "biology": 0.2},
+    "marxism":          {"marxism": 1.0, "philosophy": 0.6, "economics": 0.7,
+                         "literature": 0.3, "chinese_philosophy": 0.4},
+    "economics":        {"economics": 1.0, "marxism": 0.7, "math": 0.4, "cs": 0.3,
+                         "psychology": 0.3, "philosophy": 0.3},
+    "literature":       {"literature": 1.0, "scifi": 0.5, "philosophy": 0.4,
+                         "chinese_philosophy": 0.5, "psychology": 0.3, "marxism": 0.3},
+    "scifi":            {"scifi": 1.0, "literature": 0.5, "cs": 0.4, "physics": 0.3,
+                         "philosophy": 0.3, "biology": 0.3},
+}
+
+
+def get_domain_topology(domain_a: str, domain_b: str) -> float:
+    """获取两个学科之间的拓扑连接强度。
+
+    参考 TopoNets: 相邻学科在概念空间中嵌入更近。
+    """
+    row = DOMAIN_TOPOLOGY_MATRIX.get(domain_a, {})
+    w = row.get(domain_b, 0.0)
+    if w == 0.0:
+        # 检查反向
+        row = DOMAIN_TOPOLOGY_MATRIX.get(domain_b, {})
+        w = row.get(domain_a, 0.0)
+    return w
+
+
+def get_domain_neighbors(domain: str, threshold: float = 0.3) -> List[Tuple[str, float]]:
+    """获取指定学科的强关联邻居学科。
+
+    TopoNets 原理: 拓扑组织意味着邻居学科共享计算策略。
+    """
+    row = DOMAIN_TOPOLOGY_MATRIX.get(domain, {})
+    neighbors = [(d, w) for d, w in row.items() if d != domain and w >= threshold]
+    neighbors.sort(key=lambda x: x[1], reverse=True)
+    return neighbors

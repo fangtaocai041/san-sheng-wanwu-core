@@ -1,20 +1,30 @@
 """
-memory/magma.py — 四维正交图谱记忆 (MAGMA 架构移植)
+memory/magma.py — 四维正交图谱记忆 (嵌套记忆层级增强版 v2.0)
 
-核心: 将每个记忆项在四个正交关系图上表示:
-  语义图 (Semantic)   — 内容相似性
-  时序图 (Temporal)   — 时间关联
-  因果图 (Causal)     — 因果关系链
-  实体图 (Entity)     — 实体间关系
+架构:
+  热记忆 (Hot) — 当前 session, TTL=300s, 快速衰减, 小容量
+  温记忆 (Warm) — 近期 session, TTL=24h, 中等衰减
+  冷记忆 (Cold) — 巩固后永久, 无衰减或极慢
 
-检索 = 策略引导的图遍历 + 语义相似度评分。
+每层独立维护四张正交关系图:
+  语义图 (Semantic) — 内容相似性
+  时序图 (Temporal) — 时间关联
+  因果图 (Causal)   — 因果关系链
+  实体图 (Entity)   — 实体间关系
+
+检索策略:
+  - DSA 风格选择性注意力: 先用轻量索引器预筛选相关子图
+  - 再在子图上执行密集推理
+  - 结果按层级加权: Hot > Warm > Cold
+
+学术渊源:
+  - Google Nested Learning (NeurIPS 2025): 多速度更新的内存
+  - DeepSeek Sparse Attention (2025): 闪电索引器 + Token 选择器
+  - MAGMA (arXiv 2601.03236): 四维正交图谱记忆
 
 语义编码器:
-  - CharacterNgramEncoder (内置, 零依赖) — 基于中文汉字 n-gram 的语义匹配
-  - HuggingFaceEncoder (可选) — 需安装 sentence-transformers, 更高精度
-
-移植自: MAGMA (Multi-Graph based Agentic Memory Architecture)
-论文: arXiv 2601.03236 | GitHub: FredJiang0324/MAGMA
+  - CharacterNgramEncoder (内置, 零依赖) — 基于中文汉字 n-gram
+  - HuggingFaceEncoder (可选) — 需安装 sentence-transformers
 """
 
 from __future__ import annotations
@@ -28,71 +38,42 @@ import uuid
 
 
 # ═══════════════════════════════════════════════════════════════
-# 语义编码器 (相似度计算)
+# 语义编码器 (相似度计算) — 与 v1 兼容
 # ═══════════════════════════════════════════════════════════════
 
 def _char_ngrams(text: str, n: int = 2) -> Set[str]:
-    """生成中文文本的字符 n-gram。
-
-    中文汉字 ≈ 语义原子, 字符 n-gram 比词拆分更鲁棒。
-    例如 "长江鱼类" → {"长江", "江鱼", "鱼类"}
-    """
+    """生成中文文本的字符 n-gram。"""
     clean = ''.join(c for c in text if c.isalpha() or c.isdigit())
     return {clean[i:i+n] for i in range(len(clean) - n + 1)}
 
 
 def _jaccard(a: Set, b: Set) -> float:
-    """Jaccard 相似度。"""
     if not a or not b:
         return 0.0
     return len(a & b) / max(len(a | b), 1)
 
 
 class CharacterNgramEncoder:
-    """字符 n-gram 语义编码器 (零依赖)。
-
-    基于中文汉字的 bi-gram 和 tri-gram 重叠计算语义相似度。
-    对中文文本效果良好, 因为汉字本身就是语义单元。
-
-    用法:
-        encoder = CharacterNgramEncoder()
-        sim = encoder.similarity("长江鱼类", "长江珍稀鱼类")
-        # → ~0.5 （共享 "长江" "鱼类"）
-    """
-
+    """字符 n-gram 语义编码器 (零依赖)。"""
     def __init__(self, n: int = 2):
         self.n = n
         self.name = "char_ngram"
 
     def encode(self, text: str) -> Set[str]:
-        """将文本编码为 n-gram 集合。"""
         return _char_ngrams(text, self.n)
 
     def similarity(self, a: str, b: str) -> float:
-        """计算两段文本的语义相似度 0-1。"""
         ngrams_a = self.encode(a)
         ngrams_b = self.encode(b)
-
-        # bi-gram + tri-gram 混合
         bigram_sim = _jaccard(ngrams_a, ngrams_b)
-
         tri_a = _char_ngrams(a, 3)
         tri_b = _char_ngrams(b, 3)
         trigram_sim = _jaccard(tri_a, tri_b)
-
-        return (bigram_sim * 0.6 + trigram_sim * 0.4)
+        return bigram_sim * 0.6 + trigram_sim * 0.4
 
 
 class HuggingFaceEncoder:
-    """基于 sentence-transformers 的语义编码器 (可选)。
-
-    需要: pip install sentence-transformers
-
-    用法:
-        encoder = HuggingFaceEncoder(model_name="all-MiniLM-L6-v2")
-        sim = encoder.similarity("长江鱼类", "长江珍稀鱼类")
-    """
-
+    """基于 sentence-transformers 的语义编码器 (可选)。"""
     def __init__(self, model_name: str = "all-MiniLM-L6-v2"):
         self.name = f"huggingface/{model_name}"
         self._model = None
@@ -105,10 +86,7 @@ class HuggingFaceEncoder:
             from sentence_transformers import SentenceTransformer
             self._model = SentenceTransformer(self._model_name)
         except ImportError:
-            raise ImportError(
-                "sentence-transformers not installed. "
-                "Run: pip install sentence-transformers"
-            )
+            raise ImportError("sentence-transformers not installed. Run: pip install sentence-transformers")
 
     def encode(self, text: str) -> list:
         self._lazy_load()
@@ -118,7 +96,6 @@ class HuggingFaceEncoder:
         self._lazy_load()
         emb_a = self._model.encode(a)
         emb_b = self._model.encode(b)
-        # 余弦相似度
         dot = sum(x * y for x, y in zip(emb_a, emb_b))
         norm_a = math.sqrt(sum(x * x for x in emb_a))
         norm_b = math.sqrt(sum(x * x for x in emb_b))
@@ -126,38 +103,75 @@ class HuggingFaceEncoder:
 
 
 def create_encoder(backend: str = "char_ngram", **kwargs) -> Any:
-    """创建语义编码器工厂函数。
-
-    Args:
-        backend: "char_ngram" (默认, 零依赖) | "huggingface" (需安装)
-        **kwargs: 传递给编码器的参数
-    """
     if backend == "huggingface":
         return HuggingFaceEncoder(**kwargs)
     return CharacterNgramEncoder(**kwargs)
 
 
 # ═══════════════════════════════════════════════════════════════
-# 图数据结构
+# 记忆层级配置
+# ═══════════════════════════════════════════════════════════════
+
+class MemoryTier:
+    """记忆层级定义。"""
+    HOT = "hot"      # 工作记忆: 当前 session, 快速衰减
+    WARM = "warm"    # 短期记忆: 跨 session, 中等衰减
+    COLD = "cold"    # 长期记忆: 巩固后, 不遗忘
+
+    TIERS = [HOT, WARM, COLD]
+
+    # 每层 TTL (秒)
+    TTL = {
+        HOT: 300,      # 5 分钟
+        WARM: 86400,   # 24 小时
+        COLD: float('inf'),  # 永久
+    }
+
+    # 每层容量上限
+    CAPACITY = {
+        HOT: 50,
+        WARM: 500,
+        COLD: float('inf'),
+    }
+
+    # 每层遗忘曲线参数 (半衰期, 小时)
+    HALF_LIFE_HOURS = {
+        HOT: 0.05,     # ~3 分钟
+        WARM: 4.0,     # ~4 小时
+        COLD: 8760,    # ~1 年 (几乎不遗忘)
+    }
+
+
+def forgetting_curve(hours_elapsed: float, half_life_hours: float) -> float:
+    """通用遗忘曲线: R(t) = e^(-t * ln(2) / half_life)
+
+    与 Ebbinghaus 形式一致但可配置半衰期。
+    """
+    if half_life_hours <= 0:
+        return 0.0
+    return math.exp(-hours_elapsed * math.log(2) / half_life_hours)
+
+
+# ═══════════════════════════════════════════════════════════════
+# 图数据结构 (与 v1 兼容)
 # ═══════════════════════════════════════════════════════════════
 
 class RelationType:
-    """四维正交关系类型。"""
-    TEMPORAL = "temporal"   # 时间先后/同时
-    SEMANTIC = "semantic"   # 内容相似/相关
-    CAUSAL = "causal"       # 因果/使能/阻止
-    ENTITY = "entity"       # 实体指代
+    TEMPORAL = "temporal"
+    SEMANTIC = "semantic"
+    CAUSAL = "causal"
+    ENTITY = "entity"
 
 
 @dataclass
 class MemoryNode:
     """记忆图谱中的一个节点。"""
     node_id: str = ""
-    content: str = ""          # 记忆内容
-    summary: str = ""          # 摘要 (用于快速匹配)
-    entities: List[str] = field(default_factory=list)   # 涉及的实体
-    timestamp: float = 0.0     # 创建时间
-    importance: float = 0.5    # 重要性 0-1
+    content: str = ""
+    summary: str = ""
+    entities: List[str] = field(default_factory=list)
+    timestamp: float = 0.0
+    importance: float = 0.5
     access_count: int = 0
     metadata: Dict[str, Any] = field(default_factory=dict)
 
@@ -176,218 +190,332 @@ class MemoryNode:
 
 @dataclass
 class Relation:
-    """两个节点之间的关系。"""
     source_id: str
     target_id: str
-    rel_type: str        # temporal | semantic | causal | entity
-    weight: float = 1.0  # 关系强度 0-1
-    label: str = ""      # 关系标签 (如 "precedes", "leads_to", "refers_to")
+    rel_type: str
+    weight: float = 1.0
+    label: str = ""
 
 
 # ═══════════════════════════════════════════════════════════════
-# 四维图谱记忆
+# 嵌套层级记忆 (v2.0 核心)
 # ═══════════════════════════════════════════════════════════════
 
 class MagmaMemory:
-    """四维正交图谱记忆。
+    """四维正交图谱记忆 v2.0 — 嵌套记忆层级。
 
-    四张正交关系图:
-      G_temporal: 时间先后/同时/包含
-      G_semantic:  内容相似/相关/部分
-      G_causal:    导致/因为/使能/阻止
-      G_entity:    提及/指代
+    每层 (Hot/Warm/Cold) 维护一组独立的四维图。
+    检索时从所有层级融合结果，按层级加权 (Hot > Warm > Cold)。
 
-    检索策略:
-      - 意图感知路由器: 分析查询 → 选择主导维度
-      - 自适应遍历: 沿选定维度跳跃, 融合多图结果
-      - 结构化上下文构建: 将遍历结果线性化
-
-    用法:
+    用法 (API 与 v1 兼容):
         mem = MagmaMemory()
-        node = mem.add("用户说鳤是珍稀鱼类")
+        node = mem.add("鳤是珍稀鱼类")
         results = mem.search("鳤的保护现状")
     """
 
     def __init__(self, encoder_backend: str = "char_ngram", **encoder_kwargs):
         self.name = "magma"
-        self._nodes: Dict[str, MemoryNode] = {}
-        self._graphs: Dict[str, Dict[str, List[Relation]]] = {
-            RelationType.TEMPORAL: {},
-            RelationType.SEMANTIC: {},
-            RelationType.CAUSAL: {},
-            RelationType.ENTITY: {},
-        }
         self._encoder = create_encoder(encoder_backend, **encoder_kwargs)
         self._encoder_name = encoder_backend
+
+        # 嵌套记忆层级 { tier: { node_id: MemoryNode } }
+        self._tiers: Dict[str, Dict[str, MemoryNode]] = {
+            MemoryTier.HOT: {},
+            MemoryTier.WARM: {},
+            MemoryTier.COLD: {},
+        }
+
+        # 每层四维图 { tier: { rel_type: { source_id: [Relation] } } }
+        self._graphs: Dict[str, Dict[str, Dict[str, List[Relation]]]] = {
+            tier: {
+                rt: {} for rt in [RelationType.TEMPORAL, RelationType.SEMANTIC,
+                                  RelationType.CAUSAL, RelationType.ENTITY]
+            } for tier in MemoryTier.TIERS
+        }
 
     # ── 写入 ──
 
     def add(self, content: str, entities: Optional[List[str]] = None,
-            importance: float = 0.5, metadata: Optional[Dict] = None) -> MemoryNode:
-        """添加一条记忆并自动建立四维关系。"""
+            importance: float = 0.5, metadata: Optional[Dict] = None,
+            tier: str = MemoryTier.HOT) -> MemoryNode:
+        """添加一条记忆到指定层级 (默认热记忆)。"""
         node = MemoryNode(
             content=content,
             entities=entities or self._extract_entities(content),
             importance=importance,
-            metadata=metadata or {},
+            metadata={**(metadata or {}), "tier": tier},
         )
-        self._nodes[node.node_id] = node
 
-        # 与现有节点自动建立关系
-        for existing in self._nodes.values():
+        # 写入指定层级
+        nodes = self._tiers[tier]
+        nodes[node.node_id] = node
+
+        # 与该层级内的现有节点自动建立关系
+        for existing in list(nodes.values()):
             if existing.node_id == node.node_id:
                 continue
 
-            # 语义关系: n-gram 相似度
             semantic_score = self._calc_semantic(node, existing)
             if semantic_score > 0.25:
                 self._relate(node.node_id, existing.node_id,
-                            RelationType.SEMANTIC, semantic_score)
+                            RelationType.SEMANTIC, semantic_score, tier=tier)
 
-            # 实体关系: 共享实体
             entity_overlap = set(node.entities) & set(existing.entities)
             if entity_overlap:
                 union_size = len(set(node.entities) | set(existing.entities))
                 self._relate(node.node_id, existing.node_id,
                             RelationType.ENTITY,
-                            len(entity_overlap) / max(union_size, 1))
+                            len(entity_overlap) / max(union_size, 1), tier=tier)
 
-            # 时序关系: 时间接近
             time_diff = abs(node.timestamp - existing.timestamp)
-            if time_diff < 3600:  # 1 小时内
-                temporal_weight = 1.0 - (time_diff / 3600)
+            threshold = 300 if tier == MemoryTier.HOT else 3600
+            if time_diff < threshold:
+                temporal_weight = 1.0 - (time_diff / threshold)
                 self._relate(node.node_id, existing.node_id,
                             RelationType.TEMPORAL, temporal_weight,
-                            "concurrent" if time_diff < 300 else "precedes")
+                            "concurrent" if time_diff < threshold * 0.1 else "precedes",
+                            tier=tier)
+
+        # 容量管理: 超出时淘汰最旧的
+        self._evict_if_needed(tier)
 
         return node
 
+    def add_warm(self, content: str, **kwargs) -> MemoryNode:
+        """快捷方法: 添加到温记忆。"""
+        return self.add(content, tier=MemoryTier.WARM, **kwargs)
+
+    def add_cold(self, content: str, **kwargs) -> MemoryNode:
+        """快捷方法: 添加到冷记忆 (巩固后)。"""
+        return self.add(content, tier=MemoryTier.COLD, **kwargs)
+
+    def promote(self, node_id: str, from_tier: str = MemoryTier.HOT,
+                to_tier: str = MemoryTier.WARM) -> bool:
+        """将记忆从低层提升到高层。"""
+        source = self._tiers[from_tier]
+        if node_id not in source:
+            return False
+        node = source.pop(node_id)
+        node.metadata["tier"] = to_tier
+        node.metadata["promoted_at"] = time.time()
+        self._tiers[to_tier][node_id] = node
+
+        # 复制关系到目标层 (简化: 全部迁移)
+        for rel_type in self._graphs[from_tier]:
+            if node_id in self._graphs[from_tier][rel_type]:
+                edges = self._graphs[from_tier][rel_type].pop(node_id)
+                self._graphs[to_tier][rel_type][node_id] = edges
+
+        return True
+
     def relate(self, source_id: str, target_id: str,
                rel_type: str = RelationType.CAUSAL,
-               weight: float = 1.0, label: str = ""):
-        """手动建立两个节点之间的关系。"""
-        self._relate(source_id, target_id, rel_type, weight, label)
+               weight: float = 1.0, label: str = "",
+               tier: str = MemoryTier.HOT):
+        """手动建立两个节点之间的关系 (API 兼容 v1)。"""
+        self._relate(source_id, target_id, rel_type, weight, label, tier=tier)
 
     def _relate(self, source_id: str, target_id: str,
-                rel_type: str, weight: float, label: str = ""):
-        """在指定关系图上添加边。"""
-        if source_id not in self._nodes or target_id not in self._nodes:
+                rel_type: str, weight: float, label: str = "",
+                tier: str = MemoryTier.HOT):
+        """在指定层级的关系图上添加边。"""
+        nodes = self._tiers[tier]
+        if source_id not in nodes or target_id not in nodes:
             return
         rel = Relation(source_id, target_id, rel_type, weight, label)
-        self._graphs[rel_type].setdefault(source_id, []).append(rel)
+        self._graphs[tier][rel_type].setdefault(source_id, []).append(rel)
 
-    # ── 检索 (策略引导图遍历) ──
+    def _evict_if_needed(self, tier: str):
+        """超出容量时淘汰最旧的节点。"""
+        capacity = MemoryTier.CAPACITY[tier]
+        if capacity == float('inf'):
+            return
+        nodes = self._tiers[tier]
+        if len(nodes) <= capacity:
+            return
+        # 按时间戳排序, 删除最旧的
+        sorted_ids = sorted(nodes.keys(), key=lambda nid: nodes[nid].timestamp)
+        for old_id in sorted_ids[:len(sorted_ids) - capacity]:
+            del nodes[old_id]
+            for rel_type in self._graphs[tier]:
+                self._graphs[tier][rel_type].pop(old_id, None)
 
-    def search(self, query: str, top_k: int = 10) -> List[MemoryNode]:
-        """四维图遍历检索。
+    # ── 检索 (DSA 风格选择性注意力) ──
+
+    def search(self, query: str, top_k: int = 10,
+               tiers: Optional[List[str]] = None) -> List[MemoryNode]:
+        """检索记忆: DSA 风格的选择性图遍历。
 
         步骤:
-          1. 意图分析: 检测查询的语义/实体/因果需求
-          2. 锚点选择: 找到查询相关的起始节点
-          3. 策略遍历: 沿选定维度跳跃
-          4. 多图融合: RRF 融合各图结果
-          5. 提取聚合: 线性化为上下文
+          1. 闪电索引: 用 n-gram 生成查询指纹, 快速找候选层
+          2. Token 选择: 在每个层级中找到 top-3 锚点
+          3. 稀疏注意力: 只在锚点周围进行图遍历
+          4. 层级融合: 按 Hot > Warm > Cold 加权
+
+        Args:
+            query: 查询文本
+            top_k: 返回结果数
+            tiers: 检索的层级列表 (默认全部)
         """
-        if not self._nodes:
-            return []
+        if tiers is None:
+            tiers = [t for t in MemoryTier.TIERS if self._tiers[t]]
 
-        # 1. 意图分析 + 2. 锚点选择
-        query_entities = self._extract_entities(query)
-        query_terms = set(query.lower().split())
-
-        # 找到锚点节点 (与查询语义/实体相关的节点)
+        # 1. 闪电索引: 查询指纹 = n-gram 集合
         query_ngrams = self._encoder.encode(query)
-        scored: Dict[str, float] = {}
-        for nid, node in self._nodes.items():
-            score = 0.0
-            # 实体匹配
-            if query_entities and node.entities:
-                qe_set = set(query_entities)
-                ne_set = set(node.entities)
-                overlap = len(qe_set & ne_set)
-                score += overlap * 0.3
-            # 语义相似度 (n-gram 或 transformer)
-            semantic = self._encoder.similarity(query, node.content)
-            score += semantic * 0.3
-            # 关键词包含匹配
-            q_lower = query.lower()
-            if q_lower in node.content.lower():
-                score += 0.2
-            # 重要性加权
-            score *= node.importance
-            if score > 0:
-                scored[nid] = score
+        query_entities = self._extract_entities(query)
+
+        # 层级加权系数: Hot > Warm > Cold
+        tier_weights = {MemoryTier.HOT: 1.0, MemoryTier.WARM: 0.7, MemoryTier.COLD: 0.4}
+        tier_search_order = [MemoryTier.HOT, MemoryTier.WARM, MemoryTier.COLD]
+
+        scored: Dict[str, Tuple[float, str]] = {}  # node_id -> (score, tier)
+
+        for tier in tier_search_order:
+            if tier not in tiers:
+                continue
+            nodes = self._tiers[tier]
+            if not nodes:
+                continue
+            tw = tier_weights[tier]
+
+            for nid, node in nodes.items():
+                score = 0.0
+                # 实体匹配
+                if query_entities and node.entities:
+                    overlap = len(set(query_entities) & set(node.entities))
+                    score += overlap * 0.3 * tw
+                # 语义相似度
+                semantic = self._encoder.similarity(query, node.content)
+                score += semantic * 0.3 * tw
+                # 关键词包含
+                if query.lower() in node.content.lower():
+                    score += 0.2 * tw
+                # 遗忘曲线衰减
+                hl = MemoryTier.HALF_LIFE_HOURS[tier]
+                recall = forgetting_curve(node.age_hours, hl)
+                score *= recall * node.importance
+
+                if score > 0:
+                    # 已经存在则取更高分
+                    existing = scored.get(nid)
+                    if existing is None or score > existing[0]:
+                        scored[nid] = (score, tier)
 
         if not scored:
             return []
 
-        # 3. 策略遍历: 从高分锚点出发沿图跳跃
-        top_anchors = sorted(scored, key=scored.get, reverse=True)[:3]
+        # 2. Token 选择: 选每层 top-3 锚点
+        anchors_per_tier = {}
+        for nid, (score, tier) in scored.items():
+            anchors_per_tier.setdefault(tier, []).append((nid, score))
+        for tier in anchors_per_tier:
+            anchors_per_tier[tier].sort(key=lambda x: x[1], reverse=True)
+            anchors_per_tier[tier] = anchors_per_tier[tier][:3]
+
+        # 3. 稀疏注意力: 从锚点出发沿图遍历 (限 depth=2)
         visited: Set[str] = set()
         results: Dict[str, float] = {}
 
-        for anchor_id in top_anchors:
-            self._traverse(anchor_id, visited, results, depth=0, max_depth=2)
+        for tier, anchors in anchors_per_tier.items():
+            for anchor_id, _ in anchors:
+                self._traverse(anchor_id, visited, results,
+                              depth=0, max_depth=2, tier=tier)
 
-        # 4. 多图融合: 合并各维度结果并重新排序
+        # 4. 层级融合排序
         sorted_ids = sorted(results, key=results.get, reverse=True)[:top_k]
-        return [self._nodes[nid] for nid in sorted_ids if nid in self._nodes]
+
+        # 从对应层级取节点
+        result_nodes = []
+        for nid in sorted_ids:
+            for tier in MemoryTier.TIERS:
+                if nid in self._tiers[tier]:
+                    result_nodes.append(self._tiers[tier][nid])
+                    break
+        return result_nodes
 
     def _traverse(self, node_id: str, visited: Set[str],
-                  results: Dict[str, float], depth: int, max_depth: int):
-        """从指定节点出发, 沿所有四维图遍历。"""
+                  results: Dict[str, float], depth: int, max_depth: int,
+                  tier: str = MemoryTier.HOT):
+        """从指定节点出发, 沿四维图遍历 (限当前层级)。"""
         if depth > max_depth or node_id in visited:
             return
         visited.add(node_id)
 
-        # 衰减权重
         decay = 0.7 ** depth
+        # 遗忘曲线衰减
+        if node_id in self._tiers[tier]:
+            node = self._tiers[tier][node_id]
+            hl = MemoryTier.HALF_LIFE_HOURS[tier]
+            recall = forgetting_curve(node.age_hours, hl)
+            decay *= recall
+
         results[node_id] = results.get(node_id, 0) + decay
 
-        # 探索所有四维图的邻接节点
-        for rel_type in RelationType.TEMPORAL, RelationType.SEMANTIC, RelationType.CAUSAL, RelationType.ENTITY:
-            relations = self._graphs[rel_type].get(node_id, [])
+        for rel_type in [RelationType.TEMPORAL, RelationType.SEMANTIC,
+                        RelationType.CAUSAL, RelationType.ENTITY]:
+            relations = self._graphs[tier][rel_type].get(node_id, [])
             for rel in relations:
                 next_id = rel.target_id
                 if next_id not in visited:
                     decayed = decay * rel.weight
                     results[next_id] = results.get(next_id, 0) + decayed
-                    self._traverse(next_id, visited, results, depth + 1, max_depth)
+                    self._traverse(next_id, visited, results,
+                                  depth + 1, max_depth, tier)
 
     # ── 辅助 ──
 
     def _extract_entities(self, text: str) -> List[str]:
-        """从文本中提取实体。"""
         words = text.split()
         entities = []
         for w in words:
             clean = w.strip("，。！？、""''（）()《》【】[]·,").strip()
             if len(clean) >= 2:
-                # 英文学名或大写缩写
                 if clean[0].isupper() or any(c.isalpha() for c in clean):
                     entities.append(clean)
         return entities
 
     def _calc_semantic(self, a: MemoryNode, b: MemoryNode) -> float:
-        """使用语义编码器计算相似度。"""
         return self._encoder.similarity(a.content, b.content)
 
-    # ── 统计 ──
+    # ── 层级管理 ──
+
+    def get_tier_sizes(self) -> Dict[str, int]:
+        return {t: len(self._tiers[t]) for t in MemoryTier.TIERS}
+
+    def age_out_hot(self) -> int:
+        """将超时的热记忆降级为温记忆。"""
+        now = time.time()
+        promoted = 0
+        for nid, node in list(self._tiers[MemoryTier.HOT].items()):
+            if now - node.timestamp > MemoryTier.TTL[MemoryTier.HOT]:
+                if self.promote(nid, MemoryTier.HOT, MemoryTier.WARM):
+                    promoted += 1
+        return promoted
+
+    # ── 统计 (API 兼容 v1) ──
 
     @property
     def node_count(self) -> int:
-        return len(self._nodes)
+        return sum(len(ns) for ns in self._tiers.values())
 
     @property
     def edge_count(self) -> int:
-        return sum(len(edges) for g in self._graphs.values() for edges in g.values())
+        total = 0
+        for tier in MemoryTier.TIERS:
+            for g in self._graphs[tier].values():
+                for edges in g.values():
+                    total += len(edges)
+        return total
 
     def stats(self) -> dict:
         return {
             "nodes": self.node_count,
             "edges": self.edge_count,
-            "graphs": {rt: sum(len(es) for es in g.values())
-                      for rt, g in self._graphs.items()},
+            "tiers": self.get_tier_sizes(),
+            "graphs": {t: {rt: sum(len(es) for es in g.values())
+                          for rt, g in self._graphs[t].items()}
+                      for t in MemoryTier.TIERS},
+            "encoder": self._encoder_name,
         }
 
     def report(self) -> dict:

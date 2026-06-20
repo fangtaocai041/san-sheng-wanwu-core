@@ -54,7 +54,11 @@ class TestMagma:
         stats = m.stats()
         assert stats["nodes"] == 3
         assert stats["edges"] >= 1  # entity link between A and B
-        assert "semantic" in stats["graphs"]
+        # v2.0: stats["graphs"] 按 tier 嵌套
+        has_edges = any(stats["graphs"][t][rt] > 0
+                       for t in stats["graphs"]
+                       for rt in stats["graphs"][t])
+        assert has_edges, "stats should show edges in at least one tier"
 
     def test_empty_search(self):
         m = MagmaMemory()
@@ -80,4 +84,4 @@ class TestMagmaConsolidate:
         mem = MemorySystem()
         mem.store("test content")
         r = mem.search("test")
-        assert r["method"] == "magma_4d_graph_traversal"
+        assert r["method"] == "magma_v2_nested_tiers"

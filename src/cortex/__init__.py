@@ -13,7 +13,8 @@ cortex — 认知处理核心
   explanatory.py 可解释性: 推理链记录、多层解释生成 (XAI)
   healing.py     自愈引擎: 健康检查、异常诊断、自动恢复
   learning.py    学习适应: 策略追踪、参数自适应、感受器权重
-  soul.py        灵魂引擎: TCSC 不动点 (自我表征收敛)
+  self_model.py  阻尼自我模型: DSM 替代 TCSC (2026-06 重构)
+  soul.py        灵魂引擎: TCSC 不动点 (已弃用, 迁移至 self_model.py)
   swarm.py       群体智能: 多 Agent 通信协议 (发现/消息/协作)
   validate.py    文献验证与可信度评估 (原 cognitive-search-engine)
   emergent.py    涌现信号检测 (原 infrastructure/unified_emergence)
@@ -35,11 +36,13 @@ from .regen import RegenEngine, RegenEvent
 from .healing import HealingEngine, HealthCheck, HealingAction
 from .learning import LearningEngine, StrategyRecord, ParameterConfig
 from .soul import SoulEngine, SoulState, SelfRepresentation, SelfDimension
+from .self_model import SelfModelEngine, ModelState
 from .swarm import SwarmEngine, AgentIdentity, AgentMessage, KnowledgeShare
 from .validate import ValidateCortex, calc_trust_score, calc_credibility_score
 from .emergent import (
     EmergenceMonitor, DimensionalEmergenceMonitor, EmergenceEngine,
     EmergenceSignal, DetectionResult, DimensionalLevel, EmergenceType,
+    RecursiveThinker,
 )
 from .pipeline import Pipeline, PipelineResult, PipelineStage
 
@@ -66,8 +69,10 @@ __all__ = [
     "HealingEngine", "HealthCheck", "HealingAction",
     # 学习适应
     "LearningEngine", "StrategyRecord", "ParameterConfig",
-    # 灵魂引擎
+    # 灵魂引擎 (已弃用 → self_model)
     "SoulEngine", "SoulState", "SelfRepresentation", "SelfDimension",
+    # 阻尼自我模型 (DSM, 替代 TCSC)
+    "SelfModelEngine", "ModelState",
     # 群体智能
     "SwarmEngine", "AgentIdentity", "AgentMessage", "KnowledgeShare",
     # 验证
@@ -75,6 +80,7 @@ __all__ = [
     # 涌现
     "EmergenceMonitor", "DimensionalEmergenceMonitor", "EmergenceEngine",
     "EmergenceSignal", "DetectionResult", "DimensionalLevel", "EmergenceType",
+    "RecursiveThinker",
     # 管道
     "Pipeline", "PipelineResult", "PipelineStage",
 ]

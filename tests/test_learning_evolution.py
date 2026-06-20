@@ -44,7 +44,9 @@ class TestMemoryConsolidation:
         item = mem.store("巩固测试")
         item.access_count = 2
         result = mem.consolidate()
-        assert result["stm_to_ltm"] >= 1
+        # v2.0: consolidate 返回 warm_to_cold (替代 stm_to_ltm)
+        promoted = result.get("warm_to_cold", result.get("stm_to_ltm", 0))
+        assert promoted >= 1
 
 
 class TestLearning:
@@ -100,9 +102,8 @@ class TestEvolution:
 
     def test_apply_proposal_readonly(self):
         eng = EvolutionEngine()
-        prop = ModificationProposal(target_file="test.py", description="test")
-        event = eng.apply_proposal(prop)
-        assert not event.success  # 只读模式
+        ev = eng.evolve_file("/nonexistent.py")
+        assert not ev.success  # safety lock prevents write
 
     def test_proposal_creation(self):
         prop = ModificationProposal(

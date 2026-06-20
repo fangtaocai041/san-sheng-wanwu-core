@@ -366,3 +366,135 @@ def get_matcher(db: KnowledgeDB | None = None) -> FishSpeciesMatcher:
     if _matcher_instance is None:
         _matcher_instance = FishSpeciesMatcher(db)
     return _matcher_instance
+
+
+# ═══════════════════════════════════════════════════════════
+# MoE 知识路由 (Knowledge Router)
+# 参考: Kimi K2 (2026) 知识粒度路由, ICML 2026 MoE 论文
+# ═══════════════════════════════════════════════════════════
+
+class KnowledgeRouter:
+    """MoE 风格知识路由 — 按查询类型路由到最相关的学科专家。
+
+    与传统 MoE (token 级路由) 不同:
+      - 这是查询级路由 (query-level routing)
+      - 整个查询路由到少数相关学科子空间
+      - 不激活无关专家, 节省 token
+
+    路由策略:
+      学名/中文名查询 → biology(生态学) + fishbase(鱼类性状)
+      分布查询 → biology(生态学) + geography
+      保护状态 → biology(保护生物学) + policy
+      经济价值 → economics
+      综合查询 → 激活所有可能相关的专家
+
+    学术渊源:
+      - Kimi K2 384专家/激活8 (MoonshotAI 2026)
+      - ICML 2026: "knowledge-wised instead of token-wised of expert decoupling"
+    """
+
+    # 学科专家注册表: 每个专家知道自己的领域关键词
+    EXPERTS = {
+        "biology": {
+            "weight": 1.0,
+            "keywords": ["鱼", "species", "生态", "栖息地", "繁殖", "种群",
+                        "学名", "拉丁", "分类", "属", "科", "目", "evolution"],
+        },
+        "fishbase": {
+            "weight": 0.9,
+            "keywords": ["体长", "体重", "形态", "性状", "max_length", "分布",
+                        "食性", "寿命", "生长"],
+        },
+        "ecology": {
+            "weight": 0.8,
+            "keywords": ["环境", "污染", "水质", "流量", "栖息地破坏",
+                        "气候变化", "入侵", "生物多样性"],
+        },
+        "conservation": {
+            "weight": 0.8,
+            "keywords": ["保护", "濒危", "IUCN", "红色名录", "灭绝",
+                        "增殖放流", "自然保护区", "CITES"],
+        },
+        "economics": {
+            "weight": 0.5,
+            "keywords": ["经济", "渔业", "养殖", "产值", "捕捞", "价格",
+                        "市场", "贸易", "产业"],
+        },
+        "geography": {
+            "weight": 0.6,
+            "keywords": ["长江", "流域", "分布", "上游", "中游", "下游",
+                        "湖泊", "支流", "水系"],
+        },
+    }
+
+    def __init__(self, router_top_k: int = 3):
+        """初始化知识路由器。
+
+        Args:
+            router_top_k: 最多激活的专家数 (默认 3, 类似 Kimi K2 的 8/384)
+        """
+        self.top_k = router_top_k
+
+    def route(self, query: str) -> Dict[str, float]:
+        """将查询路由到最相关的学科专家。
+
+        Args:
+            query: 查询字符串
+
+        Returns:
+            {expert_name: relevance_score} 已按分数降序排列
+        """
+        q = query.lower()
+        scores: Dict[str, float] = {}
+
+        for expert_name, expert_info in self.EXPERTS.items():
+            score = 0.0
+            for keyword in expert_info["keywords"]:
+                kw = keyword.lower()
+                if kw in q:
+                    score += expert_info["weight"]
+
+            # 归一化: 关键词匹配数 / 总关键词数
+            max_possible = len(expert_info["keywords"]) * expert_info["weight"]
+            if max_possible > 0:
+                score = min(score / max_possible * 2.0, 1.0)
+            else:
+                score = 0.0
+
+            if score > 0:
+                scores[expert_name] = round(score, 3)
+
+        # 按分数降序排列, 取 top_k
+        sorted_experts = dict(sorted(scores.items(), key=lambda x: x[1], reverse=True)[:self.top_k])
+
+        # 如果没有匹配, 使用默认配置 (激活 biology + ecology)
+        if not sorted_experts:
+            sorted_experts = {"biology": 0.5, "ecology": 0.5}
+
+        return sorted_experts
+
+    def suggest_search_strategy(self, query: str) -> Dict[str, Any]:
+        """基于路由结果推荐搜索策略。"""
+        experts = self.route(query)
+        num_experts = len(experts)
+
+        if num_experts <= 1:
+            depth = "exhaustive"  # 窄域深度搜索
+        elif num_experts <= 2:
+            depth = "balanced"
+        else:
+            depth = "broad"  # 广域广度搜索
+
+        return {
+            "activated_experts": experts,
+            "num_activated": num_experts,
+            "total_experts": len(self.EXPERTS),
+            "activation_ratio": round(num_experts / len(self.EXPERTS), 2),
+            "suggested_depth": depth,
+            "method": "knowledge_wise_moe_routing",
+        }
+
+    def search(self, query: str, **kwargs) -> dict:
+        """兼容 adapter 接口。"""
+        strategy = self.suggest_search_strategy(query)
+        return {"status": "ok", **strategy}

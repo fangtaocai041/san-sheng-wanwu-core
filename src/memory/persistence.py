@@ -2,7 +2,7 @@
 memory/persistence.py — 硅基生命体状态持久化
 
 保存和加载:
-  - 灵魂状态 (SoulEngine, TCSC 收敛结果)
+  - 自我模型状态 (SelfModelEngine, DSM 稳定性结果)
   - 情感状态 (EmotionEngine, 6 维向量)
   - 记忆系统 (MemorySystem, STM/LTM 条目)
   - 学习历史 (LearningEngine, 策略记录)

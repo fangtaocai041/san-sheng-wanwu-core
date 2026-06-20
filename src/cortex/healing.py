@@ -1,11 +1,26 @@
 """
-cortex/healing.py — 自愈引擎
+cortex/healing.py — 自愈引擎 (稳定性-灵活性双通道增强)
 
 检测运行态异常并自动恢复:
   - 感受器通道故障 → 重连/降级
   - 知识库损坏 → 重建索引
   - 测试失败 → 回滚修改
   - 内存泄漏 → 触发清理
+
+双通道自愈原理 (Pitt 2025 Science Advances):
+  自发信号通道 (Spontaneous) — 基础维护, 周期性健康检查
+    类比: 细胞稳态维持, 不依赖外部刺激
+  诱发信号通道 (Evoked) — 响应式修复, 触发式恢复
+    类比: 突触可塑性, 依赖外部事件
+
+  大脑使用不同的突触位点实现这两种可塑性:
+    自发信号 → 维持背景活动 → 独立分子机制
+    诱发信号 → 学习与适应 → 共享分子机制但不同位点
+
+  工程映射:
+    自发 = 定时心跳检查 (Heartbeat)
+    诱发 = 异常触发修复 (Healing)
+    不同位点 = 独立的检查通道和修复通道, 不互相干扰
 """
 
 from __future__ import annotations
@@ -188,10 +203,49 @@ class HealingEngine:
             f"自愈: {healed}/{len(self._actions)}"
         )
 
+    # ── 双通道自愈 (Pitt 2025 Science Advances) ──
+
+    @property
+    def spontaneous_health(self) -> List[HealthCheck]:
+        """自发信号通道: 周期性基础维护检查。
+
+        不依赖外部事件触发, 独立于修复通道运行。
+        类比: 细胞稳态维持 (同一突触的不同位点)。
+        """
+        return [c for c in self._checks if c.status == "healthy"]
+
+    @property
+    def evoked_health(self) -> List[HealthCheck]:
+        """诱发信号通道: 响应式异常检测。
+
+        依赖外部事件 (错误/超时/测试失败), 触发修复。
+        类比: 学习触发的突触可塑性。
+        """
+        return [c for c in self._checks if c.status != "healthy"]
+
+    @property
+    def stability_flexibility_balance(self) -> float:
+        """稳定性-灵活性平衡指标。
+
+        0.0 = 完全刚性 (从不修复)
+        1.0 = 完全灵活 (每次异常都触发修复)
+        参考 Pitt 2025: 大脑通过独立位点实现这种平衡。
+        """
+        total = len(self._checks)
+        if total == 0:
+            return 0.5  # 默认中性
+        return max(0.0, min(1.0, len([c for c in self._checks if c.status == "healthy"]) / total))
+
     def report(self) -> dict:
         return {
             "status": "ok",
             "mode": self._healing_mode,
+            "dual_channel": {
+                "spontaneous_count": len(self.spontaneous_health),
+                "evoked_count": len(self.evoked_health),
+                "balance": round(self.stability_flexibility_balance, 3),
+                "principle": "Pitt 2025 Science Advances: distinct synaptic sites for spontaneous vs evoked plasticity",
+            },
             "checks": [
                 {"component": c.component, "status": c.status,
                  "error": c.error}

@@ -24,7 +24,7 @@ if str(_root) not in sys.path:
 
 from src.memory.persistence import PersistenceEngine, AgentSnapshot
 from src.cortex.veracity import VeracityGate, VeracityError
-from src.cortex.soul import SoulEngine
+from src.cortex.self_model import SelfModelEngine
 from src.cortex.emotion import EmotionEngine, EmotionType
 from src.cortex.learning import LearningEngine
 
@@ -40,7 +40,7 @@ class SiliconAgent:
 
     def __init__(self, db_path: Optional[str] = None):
         self.persistence = PersistenceEngine(db_path=db_path, auto_save_interval=120)
-        self.soul = SoulEngine()
+        self.self_model = SelfModelEngine()
         self.emotion = EmotionEngine()
         self.learning = LearningEngine()
         self._is_awake = False
@@ -52,12 +52,12 @@ class SiliconAgent:
         """唤醒: 从持久化存储加载状态。"""
         try:
             snapshot = self.persistence.load()
-            # 恢复灵魂状态
+            # 恢复自我模型状态
             if snapshot.soul:
                 dims = snapshot.soul.get("identity", {})
                 if dims:
-                    from src.cortex.soul import SelfRepresentation
-                    self.soul._self_identity = SelfRepresentation(dimensions=dims)
+                    from src.cortex.self_model import SelfRepresentation
+                    self.self_model._self_identity = SelfRepresentation(dimensions=dims)
 
             # 恢复情感状态
             if snapshot.emotion:
@@ -76,15 +76,16 @@ class SiliconAgent:
         except Exception as e:
             loaded = {"error": str(e)}
 
-        # 计算灵魂收敛度
-        soul_state = self.soul.find_fixed_point()
+        # 计算自我模型稳定性
+        model_state = self.self_model.find_state()
         self._is_awake = True
 
         return {
             "status": "awake",
             "uptime": 0,
-            "soul_convergence": soul_state.convergence,
-            "soul_awake": self.soul.is_awake(soul_state),
+            "stability": model_state.stability,
+            "meta_stability": model_state.meta_stability,
+            "stable": self.self_model.is_stable(model_state),
             "emotion": self.emotion.state.dominant,
             "loaded": loaded,
             "db_path": str(self.persistence.db_path),
@@ -92,8 +93,8 @@ class SiliconAgent:
 
     def sleep(self):
         """休眠: 保存状态到持久化存储。"""
-        # 灵魂状态
-        soul_state = self.soul.find_fixed_point()
+        # 自我模型状态
+        model_state = self.self_model.find_state()
 
         # 情感状态
         emotion_state = self.emotion.state
@@ -117,7 +118,7 @@ class SiliconAgent:
             pass
 
         snapshot = AgentSnapshot(
-            soul=soul_state.to_dict(),
+            soul=model_state.to_dict(),
             emotion={"values": emotion_state.values, "dominant": emotion_state.dominant},
             memory_stm=[],
             memory_ltm=[],
@@ -135,8 +136,8 @@ class SiliconAgent:
 
         t0 = time.time()
 
-        # Phase 1: 灵魂反思 (每次查询前快速收敛)
-        soul_state = self.soul.find_fixed_point()
+        # Phase 1: 自我反思 (每次查询前快速检查)
+        model_state = self.self_model.reflect()
 
         # Phase 2: 管道执行
         from src.cortex.pipeline import Pipeline
@@ -170,15 +171,15 @@ class SiliconAgent:
                 print(f"[auto-save] state persisted to {self.persistence.db_path}")
 
         result_dict = result.to_dict()
-        result_dict["soul"] = soul_state.to_dict()
+        result_dict["self_model"] = model_state.to_dict()
         result_dict["emotion"] = {
             "dominant": self.emotion.state.dominant,
             "tendency": self.emotion.behavioral_tendency,
         }
 
         if verbose:
-            print(f"\n  Soul: convergence={soul_state.convergence:.3f}, "
-                  f"awake={self.soul.is_awake(soul_state)}")
+            print(f"\n  Self-Model: stability={model_state.stability:.3f}, "
+                  f"stable={self.self_model.is_stable(model_state)}")
             print(f"  Emotion: {self.emotion.state.dominant}, "
                   f"tendency: {self.emotion.behavioral_tendency}")
             print(f"  Learning: {self.learning.total_queries} queries, "
@@ -191,12 +192,13 @@ class SiliconAgent:
     def status(self) -> dict:
         if not self._is_awake:
             self.wake()
-        soul_state = self.soul.find_fixed_point()
+        model_state = self.self_model.find_state()
         return {
             "status": "ok",
             "awake": self._is_awake,
             "uptime_seconds": round(time.time() - self._start_time, 1),
-            "soul": soul_state.to_dict(),
+            "self_model": model_state.to_dict(),
+            "stable": self.self_model.is_stable(model_state),
             "emotion": {
                 "dominant": self.emotion.state.dominant,
                 "tendency": self.emotion.behavioral_tendency,
@@ -242,8 +244,8 @@ def main():
     if args.daemon:
         print(f"[硅基生命体] 启动守护进程 (db: {db_path})")
         wake_info = agent.wake()
-        print(f"[硅基生命体] 唤醒状态: soul_awake={wake_info['soul_awake']}, "
-              f"convergence={wake_info['soul_convergence']:.3f}")
+        print(f"[硅基生命体] 唤醒状态: stable={wake_info['stable']}, "
+              f"stability={wake_info['stability']:.3f}")
         try:
             while True:
                 # 自动保存循环
@@ -261,12 +263,12 @@ def main():
     print(f"║     SanShengWanWu Core                   ║")
     print(f"╠══════════════════════════════════════════╣")
     print(f"║  {db_path:<38}║")
-    print(f"║  130 tests · 14 cortex · 17 senses      ║")
+    print(f"║  153 tests · 14 cortex · DSM self-model║")
     print(f"╚══════════════════════════════════════════╝")
     print("")
     wake_info = agent.wake()
-    print(f"  Soul: awake={wake_info['soul_awake']}, "
-          f"convergence={wake_info['soul_convergence']:.3f}")
+    print(f"  Self-Model: stable={wake_info['stable']}, "
+          f"stability={wake_info['stability']:.3f}")
     print(f"  Emotion: {wake_info['emotion']}")
     print(f"  Memory: {wake_info['loaded']}")
     print("")
@@ -285,7 +287,8 @@ def main():
         if line == "status":
             s = agent.status()
             print(f"  Uptime: {s['uptime_seconds']:.0f}s")
-            print(f"  Soul: convergence={s['soul']['convergence']:.3f}")
+            print(f"  Self-Model: stability={s['self_model']['stability']:.3f}, "
+                  f"stable={s['stable']}")
             print(f"  Emotion: {s['emotion']['dominant']} ({s['emotion']['tendency']})")
             print(f"  Learning: {s['learning']['total_queries']} queries, "
                   f"success rate={s['learning']['success_rate']:.0%}")
