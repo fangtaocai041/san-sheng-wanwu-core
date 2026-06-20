@@ -115,11 +115,6 @@
 | **三段论演绎推理** | ✅ | SyllogismEngine Barbara 式 + Modus Tollens | Aristotle |
 | **符号学模型** | ✅ | SignNode 能指/所指/指称三元分离 | Peirce 1903, Saussure 1916 |
 | **音律学输出控制** | ✅ | RhythmicOutput 四速 allegro/andante/adagio/rest | Shannon 1948 |
-| **论文转PPT** | ✅ | 自动生成 7 页演示文稿 Markdown | — |
-| **言语行为分析** | ✅ | SpeechAct 5 类型断言/疑问/指令/承诺/表态 | Austin 1962 |
-| **三段论演绎推理** | ✅ | SyllogismEngine Barbara 式 + Modus Tollens | Aristotle |
-| **符号学模型** | ✅ | SignNode 能指/所指/指称三元分离 | Peirce 1903, Saussure 1916 |
-| **音律学输出控制** | ✅ | RhythmicOutput 四速 allegro/andante/adagio/rest | Shannon 1948 |
 
 ---
 
