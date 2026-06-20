@@ -17,6 +17,8 @@ cortex — 认知处理核心
   soul.py        灵魂引擎: TCSC 不动点 (已弃用, 迁移至 self_model.py)
   swarm.py       群体智能: 多 Agent 通信协议 (发现/消息/协作)
   reflect.py      反思循环: RecursiveThinker + TL + SelfModel 闭环
+  brainstorming.py  科学头脑风暴: 选题/假设生成/知识空白检测
+  reviewer.py      同行评审模拟: 审稿/润色/投稿建议
   pragmatics.py   语用学+三段论: 言语行为类型 + 演绎推理
   transposition.py  概念转座层: TE 启发的跨域推理
   validate.py    文献验证与可信度评估 (原 cognitive-search-engine)
@@ -48,6 +50,8 @@ from .emergent import (
     RecursiveThinker,
 )
 from .pragmatics import SpeechAct, detect_speech_act, SyllogismEngine, Premise, InferenceResult
+from .brainstorming import BrainstormingEngine, Hypothesis
+from .reviewer import ReviewerEngine, ReviewReport, ReviewComment
 from .transposition import TranspositionLayer, TranspositionEvent, DomesticatedPattern
 from .reflect import ReflectionLoop
 from .pipeline import Pipeline, PipelineResult, PipelineStage
@@ -89,6 +93,10 @@ __all__ = [
     "RecursiveThinker",
     # 转座层
     "TranspositionLayer", "TranspositionEvent", "DomesticatedPattern",
+    # 头脑风暴
+    "BrainstormingEngine", "Hypothesis",
+    # 审稿模拟
+    "ReviewerEngine", "ReviewReport", "ReviewComment",
     # 语用学+三段论
     "SpeechAct", "detect_speech_act", "SyllogismEngine", "Premise", "InferenceResult",
     # 管道
