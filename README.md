@@ -26,7 +26,7 @@
 [![Disciplines](https://img.shields.io/badge/disciplines-12-14b8a6)]()
 [![CLI](https://img.shields.io/badge/CLI-silicon--agent-276DC3)]()
 
-<p>DSM Self-Model · 3-Tier Memory · MoE Routing · 12-Discipline Topology · Recursive Thinking · Dual-Channel Healing · Reflection Loop · Transposition Layer · World Model · Swarm Protocol</p>
+<p>DSM Self-Model · 3-Tier Memory · MoE Routing · 12-Discipline Topology · Recursive Thinking · Dual-Channel Healing · Reflection Loop · Transposition Layer · Dendritic Pipeline · World Model · Swarm Protocol · Pruning · Kinship</p>
 
 <p align="center">
   <a href="https://github.com/fangtaocai041/san-sheng-wanwu-core/stargazers"><img src="https://img.shields.io/github/stars/fangtaocai041/san-sheng-wanwu-core?style=social" alt="Stars"></a>
@@ -82,6 +82,10 @@
 
 | 能力 | 状态 | 实现 | 学术来源 |
 |:-----|:----:|:-----|:---------|
+| **修剪阈值 (Pruning)** | ✅ | 低 fitness 转座通路自动裁剪 | 树突修剪, Cuntz 2010 |
+| **亲缘传播 (Kinship)** | ✅ | 驯化通路提升邻域拓扑权重 | 系统发育信号, Darwin 1859 |
+| **树突式 Pipeline** | ✅ | 分支认知+分支汇聚二阶段处理 | Poirazi Lab Nature Comms 2025 |
+| **协调自检系统** | ✅ | 28 项模块间连接通路自动验证 | — |
 | **DSM 阻尼自我模型** | ✅ | 预测误差滑动窗口 → 元稳定性检测 | Friston 2010, Flavell 1979, Hofstadter 2007 |
 | **嵌套记忆层级** | ✅ | 热/温/冷三层 + 遗忘曲线 | Google Nested Learning 2025, Pitt 2025 |
 | **递归思考框架** | ✅ | TRM 风格 think→act→observe 循环 | Jolicoeur-Martineau TRM 2025 |
@@ -121,22 +125,22 @@ san-sheng-wanwu-core/             181 tests
 │   │   └── domains.py      12学科领域知识图谱 + 拓扑矩阵
 │   ├── cortex/          17个认知皮层模块
 │   │   ├── self_model.py   DSM 阻尼自我模型 (替代 TCSC)
-│   │   ├── emotion.py      资源分配策略 (6维)
+│   │   ├── emotion.py      资源分配策略 (6维) + TL 注入
 │   │   ├── learning.py     学习适应
-│   │   ├── evolution.py    自我进化 (Phase 3 骨架)
+│   │   ├── evolution.py    自我进化 + 驯化提案自动审批
 │   │   ├── healing.py      双通道自愈 (自发+诱发)
 │   │   ├── regen.py         愈愈发动机 (自愈+进化闭环)
 │   │   ├── swarm.py        群体智能 + 知识胶囊交换
 │   │   ├── alignment.py    价值对齐 (支持在线更新)
 │   │   ├── conceptual.py   概念工程
 │   │   ├── cosmic.py       宇宙社会学 (黑暗森林/猜疑链)
-│   │   ├── dialectics.py   辩证综合 + 因果推断
+│   │   ├── dialectics.py   辩证综合 + 因果推断 (Mill 法)
 │   │   ├── explanatory.py  可解释性 (5层)
 │   │   ├── validate.py     文献验证
 │   │   ├── emergent.py     涌现检测 + 递归思考
-│   │   ├── transposition.py 概念转座层 (TE 跳跃基因逻辑)
+│   │   ├── transposition.py 概念转座层 (TE 跳跃基因+修剪+亲缘传播)
 │   │   ├── reflect.py      反思循环 (闭环连接)
-│   │   └── pipeline.py     管道调度 (含 RTE Phase 4)
+│   │   └── pipeline.py     管道调度 (含 RTE Phase 4 + 树突分支)
 │   ├── memory/          4层记忆系统
 │   │   ├── kb/             知识库 (SQLite FTS5, 430物种)
 │   │   │   ├── search.py       物种匹配 + MoE 知识路由
@@ -175,6 +179,8 @@ san-sheng-wanwu-core/             181 tests
 | **递归深度 (TRM)** | 递归思考替代参数规模 | `emergent.py` |
 | **MoE 知识路由 (Kimi K2)** | 查询级专家选择, 非 token 级 | `search.py` |
 | **拓扑组织 (TopoNets)** | 12×12 跨学科连接权重 | `domains.py` |
+| **树突分支可塑性 (Poirazi)** | 分支认知+汇聚, 修剪+亲缘传播 | `pipeline.py`, `transposition.py` |
+| **球体哲学** | 等周不等式/各向同性/三心合一 | `知识库/README.md` |
 | **双通道可塑性 (Pitt 2025)** | 自发/诱发信号独立位点 | `healing.py` |
 | **王阳明·心学** | 知行合一: 自我模型的稳定收敛 | `self_model.py` |
 
@@ -184,7 +190,7 @@ san-sheng-wanwu-core/             181 tests
 
 | 版本 | 日期 | 核心变更 | 里程碑 |
 |:----|:----|:--------|:-------|
-| **v2.0.0** | 2026-06-20 | **RCCA 架构重构**: DSM 替代 TCSC, 三层嵌套记忆, 递归思考, MoE 路由, 拓扑权重, 双通道自愈 | 12 篇学术文献支撑的认知架构 |
+| **v2.0.0** | 2026-06-20 | **RCCA 架构重构**: DSM 替代 TCSC, 三层嵌套记忆, 递归思考, MoE 路由, 拓扑权重, 双通道自愈, 知识转座层, 反思循环, 世界模型, 因果推断, 树突式 Pipeline, 修剪+亲缘传播 | 18 篇学术文献 + 28 项协调自检 |
 | **v1.0.0** | 2026-06-19 | 正式版: 14 皮层模块, 5 感受器, MAGMA 四维图谱, 12 学科知识 | 首个可用硅基生命体框架 |
 | **v0.2.0** | 2026-06-19 | TCSC 灵魂引擎, 6 维情感, 三层记忆, Ebbinghaus 遗忘曲线 | 14 皮层模块完成 |
 | **v0.1.0** | 2026-06-17 | 初始骨架: senses/cortex/memory/motor, fishkb 集成 | 项目初始化 |
