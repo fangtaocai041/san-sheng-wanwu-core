@@ -32,3 +32,7 @@ dist/
 
 # Reasonix runtime (may contain API keys!)
 .reasonix/
+
+# Personal utility scripts with potential secrets
+scripts/_ocr_read.py
+scripts/secret_scan.py

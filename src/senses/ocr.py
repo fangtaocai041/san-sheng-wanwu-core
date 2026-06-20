@@ -56,7 +56,7 @@ class OcrSense:
       2. 直接 API: OcrSense(api_token="...")
 
     用法:
-        sense = OcrSense(api_token="97fc...")
+        sense = OcrSense(api_token="{{PADDLEOCR_API_TOKEN}}")
         result = sense.recognize("image.jpg")
         print(result.text)
     """
