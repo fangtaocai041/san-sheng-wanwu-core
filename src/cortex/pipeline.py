@@ -461,11 +461,24 @@ class Pipeline:
         return stage
 
     def _phase_report(self, result: PipelineResult) -> PipelineStage:
-        from src.motor.report import ReportGenerator
+        from src.motor.report import ReportGenerator, RhythmicOutput
         stage = PipelineStage(name="report", status="completed")
         reporter = ReportGenerator()
         stage.summary = f"Pipeline {result.trace_id[:8]}: {result.completed}/{len(result.stages)} stages"
-        stage.data = {"report": reporter.generate(result.to_dict(), format="markdown")}
+
+        # 音律学输出节奏控制
+        tempo = RhythmicOutput.select_tempo(
+            uncertainty=0.3,  # 可从 emotion 系统获取
+            confusion=0.2,
+            confidence=0.7,
+        )
+        stage.data = {
+            "report": reporter.generate(result.to_dict(), format="markdown"),
+            "tempo": tempo,
+            "tempo_description": RhythmicOutput.describe_tempo(tempo),
+        }
+        if not RhythmicOutput.should_output(tempo):
+            stage.summary += " [REST — 矛盾待解决]"
         return stage
 
     def _phase_reflect_transpose_evolve(self, sense_data: dict) -> PipelineStage:

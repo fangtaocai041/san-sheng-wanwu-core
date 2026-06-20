@@ -39,6 +39,13 @@ check("1.13 EvolutionProposal", "from src.cortex.evolution import EvolutionEngin
 check("1.14 DualHealing", "from src.cortex.healing import HealingEngine; h=HealingEngine(); assert h.stability_flexibility_balance==0.5")
 check("1.15 VisualizerRTE", "from src.motor.visualize import Visualizer; v=Visualizer(); r=v.rte_cycle([{'tl_activity':0.5,'domesticated':1}]); assert len(r['series'])==2")
 
+# 1.16-1.18: 语言学 + 逻辑学 + 音律学
+check("1.16 SpeechAct", "from src.cortex.pragmatics import detect_speech_act; assert detect_speech_act('为什么')=='question'; assert detect_speech_act('找到论文')=='directive'; assert detect_speech_act('可疑')=='expressive'")
+check("1.17 SyllogismEngine", "from src.cortex.pragmatics import SyllogismEngine, Premise; e=SyllogismEngine(); e._premises.append(Premise('鱼类','需要水')); r=e.deduce('鳤','需要水'); assert r is None or r.confidence>0")
+check("1.18 RhythmicOutput", "from src.motor.report import RhythmicOutput; assert RhythmicOutput.select_tempo(confusion=0.8)=='rest'; assert RhythmicOutput.select_tempo(confidence=0.9)=='allegro'")
+check("1.19 SignNode", "from src.memory.magma import SignNode; n=SignNode(content='t',sign_type='symbol',signifier='鳤',referent='Ochetobius'); assert n.sign_type=='symbol'")
+check("1.20 Pipeline phases", "from src.cortex.pipeline import Pipeline; p=Pipeline(); r=p.run('test'); assert 'pragmatics' in r.stages; assert 'deduction' in r.stages")
+
 # 2. Module interconnections
 print()
 print("--- Inter-module paths ---")
