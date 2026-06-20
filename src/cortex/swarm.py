@@ -235,6 +235,51 @@ class SwarmEngine:
         entries = SwarmEngine._global_knowledge.get(topic, [])
         return [e for e in entries if e.confidence >= min_confidence]
 
+    # ── Arc 样知识胶囊 (与 TranspositionLayer 集成) ──
+
+    def exchange_capsule(self, capsule: Dict[str, Any],
+                         target_agents: Optional[List[str]] = None,
+                         transposition_layer=None) -> int:
+        """封装并从 TranspositionLayer 派发知识胶囊到目标 Agent 群。
+
+        对应生物学: Arc 基因形成病毒样外壳包裹 mRNA 在神经元间运输。
+
+        Args:
+            capsule: TranspositionLayer.package_knowledge() 的输出
+            target_agents: 目标 Agent ID 列表 (None = 广播)
+            transposition_layer: TranspositionLayer 实例 (用于打包)
+
+        Returns:
+            成功派发的胶囊数
+        """
+        if transposition_layer is not None:
+            capsule = transposition_layer.package_knowledge(
+                capsule.get("content", []),
+                confidence=capsule.get("confidence", 0.5),
+            )
+
+        # 注入源 Agent 信息
+        capsule["source_agent"] = self.agent_id
+        capsule["timestamp"] = time.time()
+
+        # 确保 capsule_id 存在
+        if "capsule_id" not in capsule:
+            capsule["capsule_id"] = uuid.uuid4().hex[:12]
+
+        # 写入群体知识库
+        topic = f"capsule_{capsule['capsule_id']}"
+        share = KnowledgeShare(
+            topic=topic,
+            content=str(capsule.get("content", ""))[:200],
+            source_agent=self.agent_id,
+            confidence=capsule.get("confidence", 0.5),
+        )
+        SwarmEngine._global_knowledge.setdefault(topic, []).append(share)
+
+        # 模拟派发 (实际 MCP 环境会发送到 target_agents)
+        dispatched = len(target_agents) if target_agents else 1
+        return dispatched
+
     # ── 共识达成 ──
 
     def reach_consensus(self, topic: str) -> Optional[str]:

@@ -237,3 +237,49 @@ class DialecticsCortex:
 
     def info(self) -> dict:
         return {"name": self.name, "version": "0.2.0", "modes": ["weighted", "circuit"]}
+
+    # ── 因果推断 ──
+
+    def infer_causation(self, observations: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """从多源观察中推断因果关系。"""
+        if not observations:
+            return []
+        inferences = []
+        by_outcome: Dict[str, List[str]] = {}
+        for obs in observations:
+            outcome = str(obs.get("outcome", ""))
+            factor = str(obs.get("factor", ""))
+            if outcome not in by_outcome:
+                by_outcome[outcome] = []
+            by_outcome[outcome].append(factor)
+        for outcome, factors in by_outcome.items():
+            if len(factors) >= 2:
+                common = set(factors[0])
+                for f in factors[1:]:
+                    common &= set(f.split(","))
+                if common:
+                    inferences.append({
+                        "cause": ",".join(common),
+                        "effect": outcome,
+                        "confidence": min(0.7, len(factors) * 0.2),
+                        "method": "求同法",
+                    })
+        factor_outcome_pairs: Dict[str, set] = {}
+        for obs in observations:
+            f = str(obs.get("factor", ""))
+            o = str(obs.get("outcome", ""))
+            if f not in factor_outcome_pairs:
+                factor_outcome_pairs[f] = set()
+            factor_outcome_pairs[f].add(o)
+        for factor, outcomes in factor_outcome_pairs.items():
+            if len(outcomes) >= 2:
+                inferences.append({
+                    "cause": factor,
+                    "effect": ",".join(outcomes),
+                    "confidence": 0.4,
+                    "method": "共变法",
+                })
+        return inferences
+
+    def search(self, query: str, **kwargs) -> dict:
+        return {"status": "ok", "name": self.name, "modes": ["weighted", "circuit"]}

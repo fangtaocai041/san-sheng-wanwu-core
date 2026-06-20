@@ -140,5 +140,19 @@ class AlignmentEngine:
             ],
         }
 
+    # ── 在线更新 ──
+
+    def update_values(self, feedback: Dict[str, float], lr: float = 0.1):
+        """根据经验反馈在线调整价值优先级。
+
+        Args:
+            feedback: {value_name: delta} 经验建议的调整方向
+            lr: 学习率 (默认 0.1)
+        """
+        for value_name, delta in feedback.items():
+            if value_name in self._values:
+                current = self._values[value_name]
+                self._values[value_name] = max(0.0, min(1.0, current + delta * lr))
+
     def search(self, query: str, **kwargs) -> dict:
         return self.report()
