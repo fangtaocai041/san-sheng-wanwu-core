@@ -153,6 +153,9 @@ class AlignmentEngine:
             if value_name in self._values:
                 current = self._values[value_name]
                 self._values[value_name] = max(0.0, min(1.0, current + delta * lr))
+            else:
+                # 新价值观自动加入
+                self._values[value_name] = max(0.0, min(1.0, delta * lr))
 
     def search(self, query: str, **kwargs) -> dict:
         return self.report()
