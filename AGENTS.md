@@ -117,4 +117,4 @@ GitHub Issues — `fangtaocai041/san-sheng-wanwu-core`. PRs are not a triage sur
 
 Single-context: `CONTEXT.md` + `docs/adr/` at repo root. See `docs/agents/domain.md`.
 
-Installed engineering skills: domain-modeling, codebase-design, tdd, diagnosing-bugs, grill-with-docs, improve-codebase-architecture, setup-matt-pocock-skills
+Installed engineering skills (16): ask-matt, codebase-design, diagnosing-bugs, domain-modeling, grill-me, grill-with-docs, handoff, implement, improve-codebase-architecture, prototype, resolving-merge-conflicts, setup-matt-pocock-skills, tdd, to-issues, to-prd, triage
