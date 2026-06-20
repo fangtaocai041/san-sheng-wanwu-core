@@ -18,15 +18,15 @@
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Version](https://img.shields.io/badge/version-2.0.0-8b5cf6)]()
-[![Tests](https://img.shields.io/badge/tests-169-22c55e)]()
-[![Cortex](https://img.shields.io/badge/cortex-15_modules-6366f1)]()
+[![Tests](https://img.shields.io/badge/tests-181-22c55e)]()
+[![Cortex](https://img.shields.io/badge/cortex-17_modules-6366f1)]()
 [![Senses](https://img.shields.io/badge/senses-18_channels-f59e0b)]()
 [![Memory](https://img.shields.io/badge/memory-4D_MAGMA-ec4899)]()
 [![Knowledge](https://img.shields.io/badge/species-430-0ea5e9)]()
 [![Disciplines](https://img.shields.io/badge/disciplines-12-14b8a6)]()
 [![CLI](https://img.shields.io/badge/CLI-silicon--agent-276DC3)]()
 
-<p>DSM Self-Model · 3-Tier Memory · MoE Routing · 12-Discipline Topology · Recursive Thinking · Dual-Channel Healing · Swarm Protocol</p>
+<p>DSM Self-Model · 3-Tier Memory · MoE Routing · 12-Discipline Topology · Recursive Thinking · Dual-Channel Healing · Reflection Loop · Transposition Layer · World Model · Swarm Protocol</p>
 
 <p align="center">
   <a href="https://github.com/fangtaocai041/san-sheng-wanwu-core/stargazers"><img src="https://img.shields.io/github/stars/fangtaocai041/san-sheng-wanwu-core?style=social" alt="Stars"></a>
@@ -85,6 +85,11 @@
 | **DSM 阻尼自我模型** | ✅ | 预测误差滑动窗口 → 元稳定性检测 | Friston 2010, Flavell 1979, Hofstadter 2007 |
 | **嵌套记忆层级** | ✅ | 热/温/冷三层 + 遗忘曲线 | Google Nested Learning 2025, Pitt 2025 |
 | **递归思考框架** | ✅ | TRM 风格 think→act→observe 循环 | Jolicoeur-Martineau TRM 2025 |
+| **反思循环 (Reflection Loop)** | ✅ | RecursiveThinker+TL+SelfModel 四阶段闭环 | — |
+| **概念转座层** | ✅ | 跳跃基因逻辑: TE 启发的跨域推理+驯化 | Arc 基因 Current Opinion 2025 |
+| **D₃ 世界模型** | ✅ | 状态预测+行动模拟+反事实推演 | LeCun AMI Labs 2026, DeepMind Genie 3 |
+| **因果推断** | ✅ | Mill 求同法+共变法 | Mill 1843, 辩证唯物主义 |
+| **知识胶囊 (Arc)** | ✅ | 病毒样推理链封装+Agent间派发 | Arc 基因 2025 |
 | **6 维资源分配策略** | ✅ | 事件驱动策略选择 → 行为倾向 | Damasio 1994, Sutton & Barto 1998 |
 | **MAGMA 四维图谱记忆** | ✅ | 语义/时序/因果/实体正交图 + NetworkX | arXiv 2601.03236 |
 | **MoE 知识路由** | ✅ | 查询级 6 专家路由 → 搜索策略推荐 | Kimi K2 2026, ICML 2026 MoE |
@@ -103,7 +108,7 @@
 ## 架构
 
 ```
-san-sheng-wanwu-core/             169 tests
+san-sheng-wanwu-core/             181 tests
 ├── src/
 │   ├── main.py          运行时主循环 (交互/守护/状态/查询)
 │   ├── cli.py           silicon-agent 命令入口
@@ -114,22 +119,24 @@ san-sheng-wanwu-core/             169 tests
 │   │   ├── fishbase.py     鱼类性状
 │   │   ├── web.py          通用网络 (Tavily/Exa)
 │   │   └── domains.py      12学科领域知识图谱 + 拓扑矩阵
-│   ├── cortex/          15个认知皮层模块
+│   ├── cortex/          17个认知皮层模块
 │   │   ├── self_model.py   DSM 阻尼自我模型 (替代 TCSC)
 │   │   ├── emotion.py      资源分配策略 (6维)
 │   │   ├── learning.py     学习适应
 │   │   ├── evolution.py    自我进化 (Phase 3 骨架)
 │   │   ├── healing.py      双通道自愈 (自发+诱发)
 │   │   ├── regen.py         愈愈发动机 (自愈+进化闭环)
-│   │   ├── swarm.py        群体智能
-│   │   ├── alignment.py    价值对齐
+│   │   ├── swarm.py        群体智能 + 知识胶囊交换
+│   │   ├── alignment.py    价值对齐 (支持在线更新)
 │   │   ├── conceptual.py   概念工程
 │   │   ├── cosmic.py       宇宙社会学 (黑暗森林/猜疑链)
-│   │   ├── dialectics.py   辩证综合
+│   │   ├── dialectics.py   辩证综合 + 因果推断
 │   │   ├── explanatory.py  可解释性 (5层)
 │   │   ├── validate.py     文献验证
 │   │   ├── emergent.py     涌现检测 + 递归思考
-│   │   └── pipeline.py     管道调度
+│   │   ├── transposition.py 概念转座层 (TE 跳跃基因逻辑)
+│   │   ├── reflect.py      反思循环 (闭环连接)
+│   │   └── pipeline.py     管道调度 (含 RTE Phase 4)
 │   ├── memory/          4层记忆系统
 │   │   ├── kb/             知识库 (SQLite FTS5, 430物种)
 │   │   │   ├── search.py       物种匹配 + MoE 知识路由
@@ -139,9 +146,10 @@ san-sheng-wanwu-core/             169 tests
 │   │   ├── cache.py         搜索缓存
 │   │   ├── consolidate.py   记忆巩固 + 多层遗忘曲线
 │   │   └── persistence.py  SQLite持久化
-│   └── motor/           2个运动模块
+│   └── motor/           3个运动模块
 │       ├── report.py       报告生成
-│       └── visualize.py    数据可视化
+│       └── visualize.py    数据可视化 + RTE 时序图
+│       └── world_model.py  D₃ 世界模型 (状态预测+行动模拟)
 ├── config/             alignment.yaml + coordination.yaml
 ├── docs/               知识储备库 + MCP接线指南 + 学科索引
 ├── AGENTS.md · SELF_MODEL.md · TOOLS.md · USER.md · HEARTBEAT.md
