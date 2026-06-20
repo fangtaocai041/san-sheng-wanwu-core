@@ -27,6 +27,7 @@ from src.cortex.veracity import VeracityGate, VeracityError
 from src.cortex.self_model import SelfModelEngine
 from src.cortex.emotion import EmotionEngine, EmotionType
 from src.cortex.learning import LearningEngine
+from src.cortex.transposition import TranspositionLayer
 
 
 class SiliconAgent:
@@ -41,10 +42,12 @@ class SiliconAgent:
     def __init__(self, db_path: Optional[str] = None):
         self.persistence = PersistenceEngine(db_path=db_path, auto_save_interval=120)
         self.self_model = SelfModelEngine()
-        self.emotion = EmotionEngine()
+        self.transposition = TranspositionLayer()
+        self.emotion = EmotionEngine(transposition_layer=self.transposition)
         self.learning = LearningEngine()
         self._is_awake = False
         self._start_time = time.time()
+        self._rte_history: list = []
 
     # ── 生命周期 ──
 
@@ -176,12 +179,27 @@ class SiliconAgent:
             "dominant": self.emotion.state.dominant,
             "tendency": self.emotion.behavioral_tendency,
         }
+        result_dict["transposition"] = {
+            "activity": self.transposition.current_activity,
+            "domesticated": len(self.transposition.get_domesticated_pathways()),
+            "total_events": self.transposition.total_transpositions,
+        }
+        # 记录 RTE 到历史
+        self._rte_history.append({
+            "query": query,
+            "tl_activity": self.transposition.current_activity,
+            "domesticated": len(self.transposition.get_domesticated_pathways()),
+        })
 
         if verbose:
             print(f"\n  Self-Model: stability={model_state.stability:.3f}, "
                   f"stable={self.self_model.is_stable(model_state)}")
             print(f"  Emotion: {self.emotion.state.dominant}, "
                   f"tendency: {self.emotion.behavioral_tendency}")
+            tl_a = self.transposition.current_activity
+            tl_d = len(self.transposition.get_domesticated_pathways())
+            print(f"  Transposition: activity={tl_a:.2f}, "
+                  f"domesticated={tl_d}")
             print(f"  Learning: {self.learning.total_queries} queries, "
                   f"success rate={self.learning.success_rate:.0%}")
 
@@ -208,6 +226,13 @@ class SiliconAgent:
                 "total_queries": self.learning.total_queries,
                 "success_rate": self.learning.success_rate,
                 "recent_performance": self.learning.recent_performance(),
+            },
+            "transposition": {
+                "activity": self.transposition.current_activity,
+                "hyperactive": self.transposition.is_hyperactive,
+                "domesticated_pathways": len(self.transposition.get_domesticated_pathways()),
+                "total_transpositions": self.transposition.total_transpositions,
+                "success_rate": self.transposition.success_rate,
             },
             "persistence": self.persistence.stats(),
         }
@@ -290,6 +315,9 @@ def main():
             print(f"  Self-Model: stability={s['self_model']['stability']:.3f}, "
                   f"stable={s['stable']}")
             print(f"  Emotion: {s['emotion']['dominant']} ({s['emotion']['tendency']})")
+            tl = s["transposition"]
+            print(f"  Transposition: activity={tl['activity']:.2f}, "
+                  f"domesticated={tl['domesticated_pathways']}")
             print(f"  Learning: {s['learning']['total_queries']} queries, "
                   f"success rate={s['learning']['success_rate']:.0%}")
             print(f"  Persistence: {s['persistence']}")
