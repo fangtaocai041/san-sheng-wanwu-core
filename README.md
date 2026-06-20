@@ -109,6 +109,7 @@
 | **科学头脑风暴** | ✅ | 组合/探索/转换三模式选题 | Boden 1990, Koestler 1964 |
 | **统计分析引擎** | ✅ | t检验/相关分析/描述统计 | — |
 | **同行评审模拟** | ✅ | 五维度评审+润色建议 | — |
+| **论文转PPT** | ✅ | 自动生成 7 页演示文稿 Markdown | — |
 | **言语行为分析** | ✅ | SpeechAct 5 类型断言/疑问/指令/承诺/表态 | Austin 1962 |
 | **三段论演绎推理** | ✅ | SyllogismEngine Barbara 式 + Modus Tollens | Aristotle |
 | **符号学模型** | ✅ | SignNode 能指/所指/指称三元分离 | Peirce 1903, Saussure 1916 |
