@@ -85,7 +85,7 @@
 | **修剪阈值 (Pruning)** | ✅ | 低 fitness 转座通路自动裁剪 | 树突修剪, Cuntz 2010 |
 | **亲缘传播 (Kinship)** | ✅ | 驯化通路提升邻域拓扑权重 | 系统发育信号, Darwin 1859 |
 | **树突式 Pipeline** | ✅ | 分支认知+分支汇聚二阶段处理 | Poirazi Lab Nature Comms 2025 |
-| **协调自检系统** | ✅ | 28 项模块间连接通路自动验证 | — |
+| **协调自检系统** | ✅ | 33 项模块间连接通路自动验证 | — |
 | **DSM 阻尼自我模型** | ✅ | 预测误差滑动窗口 → 元稳定性检测 | Friston 2010, Flavell 1979, Hofstadter 2007 |
 | **嵌套记忆层级** | ✅ | 热/温/冷三层 + 遗忘曲线 | Google Nested Learning 2025, Pitt 2025 |
 | **递归思考框架** | ✅ | TRM 风格 think→act→observe 循环 | Jolicoeur-Martineau TRM 2025 |
@@ -109,6 +109,12 @@
 | **科学头脑风暴** | ✅ | 组合/探索/转换三模式选题 | Boden 1990, Koestler 1964 |
 | **统计分析引擎** | ✅ | t检验/相关分析/描述统计 | — |
 | **同行评审模拟** | ✅ | 五维度评审+润色建议 | — |
+| **论文转PPT** | ✅ | 自动生成 7 页演示文稿 Markdown | — |
+| **Gödel 自指进化** | ✅ | SELF_INSPECT+SELF_IMPROVE 递归自我改进 | Yin et al. ACL 2025 |
+| **言语行为分析** | ✅ | SpeechAct 5 类型断言/疑问/指令/承诺/表态 | Austin 1962 |
+| **三段论演绎推理** | ✅ | SyllogismEngine Barbara 式 + Modus Tollens | Aristotle |
+| **符号学模型** | ✅ | SignNode 能指/所指/指称三元分离 | Peirce 1903, Saussure 1916 |
+| **音律学输出控制** | ✅ | RhythmicOutput 四速 allegro/andante/adagio/rest | Shannon 1948 |
 | **论文转PPT** | ✅ | 自动生成 7 页演示文稿 Markdown | — |
 | **言语行为分析** | ✅ | SpeechAct 5 类型断言/疑问/指令/承诺/表态 | Austin 1962 |
 | **三段论演绎推理** | ✅ | SyllogismEngine Barbara 式 + Modus Tollens | Aristotle |
