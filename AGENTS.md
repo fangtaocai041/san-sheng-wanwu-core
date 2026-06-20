@@ -103,3 +103,18 @@ result = p.run('鳤', species='Ochetobius elongatus')
 print(result.to_dict())
 "
 ```
+## Agent skills
+
+### Issue tracker
+
+GitHub Issues — `fangtaocai041/san-sheng-wanwu-core`. PRs are not a triage surface. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+`needs-triage` / `needs-info` / `ready-for-agent` / `ready-for-human` / `wontfix`. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context: `CONTEXT.md` + `docs/adr/` at repo root. See `docs/agents/domain.md`.
+
+Installed engineering skills: domain-modeling, codebase-design, tdd, diagnosing-bugs, grill-with-docs, improve-codebase-architecture, setup-matt-pocock-skills
