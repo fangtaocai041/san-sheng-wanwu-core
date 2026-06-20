@@ -197,6 +197,66 @@ class EvolutionEngine:
     def lock(self):
         self._safety_lock = True
 
+    # ── 转座驯化通道 (与 transposition.py 集成) ──
+
+    def propose_domestication(self, source_domain: str, target_domain: str,
+                              pattern_type: str, fitness_delta: float,
+                              success_count: int) -> ModificationProposal:
+        """接受来自转座层的驯化通路生成为进化提案。
+
+        当 TranspositionLayer 检测到某个跨域模式被成功复用多次后，
+        调用此方法将其转化为一个代码层面的进化提案。
+
+        对应生物学: TE 被驯化为功能性调控元件 → 基因组层面的固定。
+
+        Args:
+            source_domain: 源知识域
+            target_domain: 目标知识域
+            pattern_type: 模式类型 (concept/inference/strategy)
+            fitness_delta: 平均适应性变化
+            success_count: 成功转座次数
+
+        Returns:
+            ModificationProposal (安全锁开启时自动执行, 否则排队)
+        """
+        description = (
+            f"[转座驯化] {source_domain}→{target_domain} "
+            f"({pattern_type}, fitness={fitness_delta:.2f}, "
+            f"success_count={success_count})"
+        )
+        proposal = ModificationProposal(
+            target_file=f"config/knowledge_base/transpositions.yaml",
+            description=description,
+            code_before="# 待添加驯化通路",
+            code_after=(
+                f"# 驯化通路: {source_domain}→{target_domain}\n"
+                f"# 类型: {pattern_type}\n"
+                f"# 适应性: {fitness_delta:.2f}\n"
+                f"# 成功次数: {success_count}\n"
+            ),
+            risk_level="low",
+            estimated_impact=f"跨域路由 {source_domain}↔{target_domain} 固化",
+            author="transposition_layer",
+        )
+        self._pending.append(proposal)
+
+        # 非安全锁模式自动提交
+        if not self._safety_lock:
+            self._auto_commit(proposal)
+
+        return proposal
+
+    def _auto_commit(self, proposal: ModificationProposal):
+        """自动提交进化事件 (用于驯化通路的快速固化)。"""
+        event = EvolutionEvent(
+            proposal_id=proposal.id,
+            target_file=proposal.target_file,
+            success=True,
+            action="domestication",
+            duration_ms=0.0,
+        )
+        self._events.append(event)
+
     # ── 分析 (只读) ──
 
     def analyze_file(self, filepath: str) -> Dict[str, Any]:

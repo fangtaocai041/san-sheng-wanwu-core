@@ -79,13 +79,19 @@ class EmotionEngine:
     更新方程（与旧版一致，保持兼容）:
       e_new = e_old + α · stimulus · (target - e_old)
       其中 α = 学习率, stimulus = 事件强度
+
+    转座集成:
+      当 uncertainty/confusion 变化时自动推送到 TranspositionLayer。
+      对应生物学: 应激状态 → TE 去抑制 → 基因组重组。
     """
 
-    def __init__(self, learning_rate: float = 0.15):
+    def __init__(self, learning_rate: float = 0.15,
+                 transposition_layer=None):
         self.name = "emotion"
         self._state = EmotionalState()
         self._history: List[EmotionalState] = []
         self._lr = learning_rate
+        self._tl = transposition_layer  # 可选的转座层引用
 
     @property
     def state(self) -> EmotionalState:
@@ -132,6 +138,16 @@ class EmotionEngine:
 
         self._state = EmotionalState(values=new_values)
         self._history.append(self._state)
+
+        # 转座层回调 (如果已注入)
+        # 当 uncertainty 或 confusion 变化时自动推送到 TranspositionLayer
+        if self._tl is not None:
+            try:
+                unc = self._state.values.get(EmotionType.UNCERTAINTY, 0.3)
+                conf = self._state.values.get(EmotionType.CONFUSION, 0.3)
+                self._tl.set_stress_level(uncertainty=unc, confusion=conf)
+            except Exception:
+                pass  # 转座层异常不打断情感更新
 
     def stimulate_multi(self, events: Dict[str, float]):
         """批量处理多个事件。"""

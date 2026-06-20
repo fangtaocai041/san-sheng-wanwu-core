@@ -189,6 +189,9 @@ class Pipeline:
         # Phase 3: 运动输出
         result.stages["report"] = self._phase_report(result)
 
+        # Phase 4: 反射-转座-进化闭环 (RTE)
+        result.stages["reflect_transpose_evolve"] = self._phase_reflect_transpose_evolve(sense_data)
+
         result.total_duration_ms = round((time.time() - t0) * 1000, 1)
         return result
 
@@ -328,6 +331,84 @@ class Pipeline:
         reporter = ReportGenerator()
         stage.summary = f"Pipeline {result.trace_id[:8]}: {result.completed}/{len(result.stages)} stages"
         stage.data = {"report": reporter.generate(result.to_dict(), format="markdown")}
+        return stage
+
+    def _phase_reflect_transpose_evolve(self, sense_data: dict) -> PipelineStage:
+        """Phase 4: 反射-转座-进化闭环 (Reflect-Transpose-Evolve)。
+
+        每次查询后自动运行:
+          1. 评估认知压力 (从感知阶段的矛盾/错误率)
+          2. 将成功的推理模式转座到相关领域
+          3. 检测驯化机会 → 提交进化提案
+
+        对应生物学: 突触可塑性 → TE 转座 → 基因组适应性进化。
+        """
+        stage = PipelineStage(name="reflect_transpose_evolve", status="processing")
+        t1 = time.time()
+
+        try:
+            # 1. 计算认知压力: 从感知结果推导 uncertainty/confusion
+            error_count = sum(1 for ch, d in sense_data.items()
+                            if isinstance(d, dict) and d.get("errors"))
+            total_channels = max(len(sense_data), 1)
+            uncertainty = min(1.0, error_count / total_channels * 1.5)
+
+            contradictory = sum(1 for ch, d in sense_data.items()
+                              if isinstance(d, dict) and len(d.get("papers", [])) > 5)
+            confusion = min(1.0, contradictory / total_channels)
+
+            # 2. 运行转座层
+            from src.cortex.transposition import TranspositionLayer
+            tl = TranspositionLayer()
+            tl.set_stress_level(uncertainty=uncertainty, confusion=confusion)
+
+            # 转座: 从高频通道到低频通道
+            channels = [ch for ch in sense_data.keys()]
+            transpositions = 0
+            for i in range(len(channels)):
+                for j in range(len(channels)):
+                    if i != j and tl.current_activity > 0.3:
+                        pattern = {
+                            "type": "search_strategy",
+                            "concept": f"{channels[i]}→{channels[j]}",
+                            "confidence": max(0.3, 1.0 - uncertainty),
+                        }
+                        event = tl.transpose(channels[i], channels[j], pattern)
+                        if event.success:
+                            transpositions += 1
+
+            # 3. 驯化检测 → 进化提案
+            domesticated = tl.get_domesticated_pathways()
+            from src.cortex.evolution import EvolutionEngine
+            evo = EvolutionEngine()
+            proposals = []
+            for dp in domesticated:
+                if dp.success_count >= 2:  # 至少成功 2 次才提案
+                    prop = evo.propose_domestication(
+                        dp.source_domain, dp.target_domain,
+                        dp.pattern_type, dp.avg_fitness_delta,
+                        dp.success_count,
+                    )
+                    proposals.append(prop.description)
+
+            stage.status = "completed"
+            stage.summary = (
+                f"RTE: stress={uncertainty:.1f}/{confusion:.1f}, "
+                f"transposed={transpositions}, "
+                f"domesticated={len(proposals)}"
+            )
+            stage.data = {
+                "uncertainty": round(uncertainty, 3),
+                "confusion": round(confusion, 3),
+                "transpositions": transpositions,
+                "proposals": proposals,
+            }
+
+        except Exception as e:
+            stage.status = "failed"
+            stage.error = str(e)
+
+        stage.duration_ms = round((time.time() - t1) * 1000, 1)
         return stage
 
     def search(self, query: str, species: str = "", **kwargs) -> dict:
