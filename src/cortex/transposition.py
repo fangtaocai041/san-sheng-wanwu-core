@@ -128,15 +128,20 @@ class TranspositionLayer:
     """
 
     def __init__(self, base_activity: float = 0.3,
-                 domestication_threshold: int = 3):
+                 domestication_threshold: int = 3,
+                 prune_threshold: float = 0.05,
+                 min_attempts_for_prune: int = 5):
         self.name = "transposition"
         self._base_activity = base_activity       # 基础转座活性
         self._stress_boost: float = 0.0           # 压力提升的活性
         self._domestication_threshold = domestication_threshold  # 驯化所需成功次数
+        self._prune_threshold = prune_threshold      # 修剪阈值
+        self._min_attempts_for_prune = min_attempts_for_prune  # 修剪前最少尝试次数
 
         # 事件记录
         self._events: List[TranspositionEvent] = []
         self._domesticated: Dict[str, DomesticatedPattern] = {}
+        self._failed_attempts: Dict[str, int] = {}   # 记录失败模式用于修剪
 
         # 近期表现追踪 (用于适应性评估)
         self._recent_fitness: List[float] = []
@@ -236,6 +241,10 @@ class TranspositionLayer:
         # 4. 驯化检测: 如果同一模式多次成功转座
         if success:
             self._check_domestication(event)
+        else:
+            # 记录失败，供修剪使用
+            key = f"{source_domain}→{target_domain}:{pattern.get('type', 'concept')}"
+            self._failed_attempts[key] = self._failed_attempts.get(key, 0) + 1
 
         return event
 
@@ -283,6 +292,101 @@ class TranspositionLayer:
     def get_domesticated_pathways(self) -> List[DomesticatedPattern]:
         """获取所有已驯化的跨域通路。"""
         return list(self._domesticated.values())
+
+    # ── 修剪 (Pruning) ──
+
+    def prune(self) -> int:
+        """修剪低 fitness 的转座模式。
+
+        对应生物学: 树突修剪 — 未使用的分支被自动裁剪。
+        fitness < prune_threshold 且尝试次数 >= min_attempts 的模式被移除。
+
+        Returns:
+            修剪数量
+        """
+        pruned = 0
+        keys_to_remove = []
+        for key, attempts in self._failed_attempts.items():
+            if attempts >= self._min_attempts_for_prune:
+                # 检查该模式是否也在 _domesticated 中
+                dp = self._domesticated.get(key)
+                if dp is None or dp.avg_fitness_delta < self._prune_threshold:
+                    keys_to_remove.append(key)
+                    if dp is not None:
+                        del self._domesticated[key]
+                    pruned += 1
+
+        for key in keys_to_remove:
+            del self._failed_attempts[key]
+
+        # 也修剪低 fitness 的驯化通路
+        for key, dp in list(self._domesticated.items()):
+            if dp.success_count >= self._min_attempts_for_prune:
+                if dp.avg_fitness_delta < self._prune_threshold:
+                    del self._domesticated[key]
+                    pruned += 1
+
+        return pruned
+
+    @property
+    def prune_candidates(self) -> int:
+        """当前可修剪的候选数。"""
+        return sum(1 for k, v in self._failed_attempts.items()
+                  if v >= self._min_attempts_for_prune)
+
+    # ── 亲缘传播 (Kinship Propagation) ──
+
+    def propagate_domestication(self, source_domain: str, target_domain: str,
+                                kinship_map: Optional[Dict[str, List[str]]] = None) -> int:
+        """当一条通路被驯化后，提升其邻域域的转座偏置。
+
+        对应生物学: 进化树上相邻分支间的转移概率更高。
+        对应树突: 活跃分支邻近的突触更容易被增强。
+
+        Args:
+            source_domain: 被驯化的源域
+            target_domain: 被驯化的目标域
+            kinship_map: {domain: [neighbor_domains]} 亲缘关系表
+                (默认使用 DEFAULT_TRANSPOSITION_BIAS 推导)
+
+        Returns:
+            受影响的邻域数量
+        """
+        if kinship_map is None:
+            # 从 DEFAULT_TRANSPOSITION_BIAS 推导邻域
+            kinship_map = {}
+            for dom in DEFAULT_TRANSPOSITION_BIAS:
+                neighbors = [n for n, w in DEFAULT_TRANSPOSITION_BIAS[dom].items() if w >= 0.5]
+                if neighbors:
+                    kinship_map[dom] = neighbors
+
+        affected = 0
+        # 提升源域的邻域
+        source_neighbors = kinship_map.get(source_domain, [])
+        for neighbor in source_neighbors:
+            if neighbor != target_domain:
+                # 模拟提升偏置: 创建一个 dummy 事件来提升偏置计数
+                event = self.transpose(
+                    source_domain, neighbor,
+                    {"type": "kinship_propagation", "concept": "propagated",
+                     "confidence": 0.6},
+                )
+                if event.success:
+                    affected += 1
+
+        # 提升目标域的邻域
+        target_neighbors = kinship_map.get(target_domain, [])
+        for neighbor in target_neighbors:
+            if neighbor != source_domain:
+                event = self.transpose(
+                    neighbor, target_domain,
+                    {"type": "kinship_propagation", "concept": "propagated",
+                     "confidence": 0.6},
+                )
+                if event.success:
+                    affected += 1
+
+        return affected
 
     def is_domesticated(self, source: str, target: str,
                         pattern_type: str = "concept") -> bool:
@@ -354,6 +458,8 @@ class TranspositionLayer:
             "success_rate": round(self.success_rate, 3),
             "domesticated_pathways": len(self._domesticated),
             "domestication_rate": round(self.domestication_rate, 3),
+            "prune_candidates": self.prune_candidates,
+            "failed_patterns": len(self._failed_attempts),
             "recent_events": [
                 {"source": e.source_domain, "target": e.target_domain,
                  "success": e.success, "fitness": e.fitness_delta,

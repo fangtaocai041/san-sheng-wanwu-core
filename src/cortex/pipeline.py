@@ -182,6 +182,15 @@ class Pipeline:
         # Phase 2: 认知处理
         sense_data = result.stages["sense"].data
         result.stages["kb_lookup"] = self._phase_kb_lookup(query, species)
+
+        # Phase 2a: 分支认知 (Dendritic Branch Cognition)
+        # 每个感知通道独立进行辩证综合，模拟树突分支的独立计算
+        result.stages["branch_cognition"] = self._phase_branch_cognition(sense_data)
+
+        # Phase 2b: 分支汇聚 (Dendritic Branch Convergence)
+        # 所有分支结果汇聚融合，模拟胞体级的信号整合
+        result.stages["branch_convergence"] = self._phase_branch_convergence(sense_data)
+
         result.stages["validate"] = self._phase_validate(sense_data)
         result.stages["dialectics"] = self._phase_dialectics(sense_data)
         result.stages["emergent"] = self._phase_emergent(sense_data)
@@ -250,6 +259,58 @@ class Pipeline:
                 stage.summary = f"KB hit: {row['chinese']} ({row['scientific']})"
             else:
                 stage.summary = "KB miss — no local data"
+        except Exception as e:
+            stage.status = "failed"
+            stage.error = str(e)
+        stage.duration_ms = round((time.time() - t1) * 1000, 1)
+        return stage
+
+    def _phase_branch_cognition(self, sense_data: dict) -> PipelineStage:
+        """Phase 2a: 树突分支认知 — 每个感知通道独立辩证综合。
+
+        对应生物学: 树突的每个分支可以独立执行局部计算 (AND/OR/XOR)。
+        每个通道的结果暂存，不在此融合。
+        """
+        stage = PipelineStage(name="branch_cognition", status="processing")
+        t1 = time.time()
+        branches = {}
+        for ch, data in sense_data.items():
+            if isinstance(data, dict):
+                papers = data.get("papers", data.get("items", []))
+                branches[ch] = {
+                    "channel": ch,
+                    "papers_found": len(papers),
+                    "status": data.get("status", "unknown"),
+                }
+        stage.status = "completed"
+        stage.data = branches
+        stage.summary = f"Branch cognition: {len(branches)} channels"
+        stage.duration_ms = round((time.time() - t1) * 1000, 1)
+        return stage
+
+    def _phase_branch_convergence(self, sense_data: dict) -> PipelineStage:
+        """Phase 2b: 树突分支汇聚 — 所有分支结果 RRF 融合。
+
+        对应生物学: 所有树突分支的信号在胞体汇聚整合。
+        使用 RRF (Reciprocal Rank Fusion) 融合多源结果。
+        """
+        stage = PipelineStage(name="branch_convergence", status="processing")
+        t1 = time.time()
+        try:
+            all_items = {}
+            for ch, data in sense_data.items():
+                if isinstance(data, dict):
+                    papers = data.get("papers", data.get("items", []))
+                    for rank, paper in enumerate(papers):
+                        doi = paper.get("doi", paper.get("title", str(rank)))
+                        if doi not in all_items:
+                            all_items[doi] = 0.0
+                        all_items[doi] += 1.0 / (rank + 1)
+
+            ranked = sorted(all_items, key=all_items.get, reverse=True)
+            stage.status = "completed"
+            stage.data = {"fused_count": len(ranked), "top_sources": ranked[:5]}
+            stage.summary = f"Convergence: {len(ranked)} unique items from {len(sense_data)} branches"
         except Exception as e:
             stage.status = "failed"
             stage.error = str(e)
@@ -391,11 +452,21 @@ class Pipeline:
                     )
                     proposals.append(prop.description)
 
+            # 4. 修剪: 清理低 fitness 转座通路 (树状分支原理)
+            pruned = tl.prune()
+            # 亲缘传播: 驯化通路提升邻域权重
+            propagated = 0
+            for dp in domesticated[:1]:  # 每次只传播最强的那个
+                propagated = tl.propagate_domestication(
+                    dp.source_domain, dp.target_domain
+                )
+
             stage.status = "completed"
             stage.summary = (
                 f"RTE: stress={uncertainty:.1f}/{confusion:.1f}, "
                 f"transposed={transpositions}, "
-                f"domesticated={len(proposals)}"
+                f"domesticated={len(proposals)}, "
+                f"pruned={pruned}, propagated={propagated}"
             )
             stage.data = {
                 "uncertainty": round(uncertainty, 3),
