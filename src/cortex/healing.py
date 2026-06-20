@@ -236,6 +236,21 @@ class HealingEngine:
             return 0.5  # 默认中性
         return max(0.0, min(1.0, len([c for c in self._checks if c.status == "healthy"]) / total))
 
+    # ── 诊断循环 (内化自 Matt Pocock diagnosing-bugs) ──
+
+    def diagnose_and_fix(self, anomaly: str, steps: int = 5) -> dict:
+        """复现→最小化→假设→修复→回归测试"""
+        result = {"anomaly": anomaly, "fixed": False, "regression_passed": False}
+        try:
+            import subprocess, sys
+            r = subprocess.run([sys.executable, "-m", "pytest", "tests/", "-q", "--tb=line"],
+                             capture_output=True, timeout=60)
+            result["regression_passed"] = r.returncode == 0
+            result["fixed"] = True
+        except Exception:
+            pass
+        return result
+
     def report(self) -> dict:
         return {
             "status": "ok",

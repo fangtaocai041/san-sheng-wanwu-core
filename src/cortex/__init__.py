@@ -18,6 +18,7 @@ cortex — 认知处理核心
   soul.py        灵魂引擎: TCSC 不动点 (已弃用, 迁移至 self_model.py)
   swarm.py       群体智能: 多 Agent 通信协议 (发现/消息/协作)
   reflect.py      反思循环: RecursiveThinker + TL + SelfModel 闭环
+  domain_modeler.py  领域建模: 术语挑战+ADR生成 (内化自 Matt Pocock)
   brainstorming.py  科学头脑风暴: 选题/假设生成/知识空白检测
   reviewer.py      同行评审模拟: 审稿/润色/投稿建议
   pragmatics.py   语用学+三段论: 言语行为类型 + 演绎推理
@@ -52,6 +53,7 @@ from .emergent import (
     RecursiveThinker,
 )
 from .pragmatics import SpeechAct, detect_speech_act, SyllogismEngine, Premise, InferenceResult
+from .domain_modeler import DomainModeler, DomainTerm, AdrRecord
 from .brainstorming import BrainstormingEngine, Hypothesis
 from .reviewer import ReviewerEngine, ReviewReport, ReviewComment
 from .transposition import TranspositionLayer, TranspositionEvent, DomesticatedPattern
@@ -99,6 +101,8 @@ __all__ = [
     "TranspositionLayer", "TranspositionEvent", "DomesticatedPattern",
     # 头脑风暴
     "BrainstormingEngine", "Hypothesis",
+    # 领域建模
+    "DomainModeler", "DomainTerm", "AdrRecord",
     # 审稿模拟
     "ReviewerEngine", "ReviewReport", "ReviewComment",
     # 语用学+三段论

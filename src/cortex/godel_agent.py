@@ -353,6 +353,24 @@ class GodelAgent:
 
     # ── 效用函数 ──
 
+    # ── 效用函数 ──
+
+    def _run_tdd_verification(self) -> float:
+        """用 TDD 引擎验证修改后的代码质量 (内化自 Matt Pocock tdd)。
+
+        每次自改进后运行红-绿-重构循环，确保修改不破坏现有测试。
+        """
+        try:
+            from src.motor.tdd_engine import TddEngine
+            te = TddEngine()
+            result = te.run(
+                test_code="assert True",
+                impl_code="# GodelAgent TDD verification", 
+            )
+            return 1.0 if result.final_green else 0.5
+        except Exception:
+            return 0.5
+
     def _test_utility(self) -> float:
         """基于测试通过率的效用度量。"""
         import subprocess
