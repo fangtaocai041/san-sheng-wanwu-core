@@ -29,3 +29,6 @@ data/*.sqlite
 # Build
 dist/
 *.egg-info/
+
+# Reasonix runtime (may contain API keys!)
+.reasonix/
