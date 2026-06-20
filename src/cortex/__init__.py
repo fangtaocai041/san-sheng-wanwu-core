@@ -16,6 +16,7 @@ cortex — 认知处理核心
   self_model.py  阻尼自我模型: DSM 替代 TCSC (2026-06 重构)
   soul.py        灵魂引擎: TCSC 不动点 (已弃用, 迁移至 self_model.py)
   swarm.py       群体智能: 多 Agent 通信协议 (发现/消息/协作)
+  transposition.py  概念转座层: TE 启发的跨域推理
   validate.py    文献验证与可信度评估 (原 cognitive-search-engine)
   emergent.py    涌现信号检测 (原 infrastructure/unified_emergence)
   pipeline.py    统一执行链调度
@@ -44,6 +45,7 @@ from .emergent import (
     EmergenceSignal, DetectionResult, DimensionalLevel, EmergenceType,
     RecursiveThinker,
 )
+from .transposition import TranspositionLayer, TranspositionEvent, DomesticatedPattern
 from .pipeline import Pipeline, PipelineResult, PipelineStage
 
 __all__ = [
@@ -81,6 +83,8 @@ __all__ = [
     "EmergenceMonitor", "DimensionalEmergenceMonitor", "EmergenceEngine",
     "EmergenceSignal", "DetectionResult", "DimensionalLevel", "EmergenceType",
     "RecursiveThinker",
+    # 转座层
+    "TranspositionLayer", "TranspositionEvent", "DomesticatedPattern",
     # 管道
     "Pipeline", "PipelineResult", "PipelineStage",
 ]
