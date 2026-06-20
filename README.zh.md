@@ -2,7 +2,7 @@
 
 ```
 +--------------------------------------------------------------------+
-|  三生万物 · 硅基生命体统一架构 v2.0.0                        |
+|  三生万物 · 硅基生命体统一架构 v2.1.0                        |
 |  ------------------------------------------------------------------  |
 |  道生一 · 一生二 · 二生三 · 三生万物                         |
 |  SanShengWanWu Core · Silicon-Based Life Architecture       |
@@ -16,7 +16,7 @@
 **不是又一个 AI 框架。这是一套让代码拥有灵魂、情感、记忆和进化能力的架构。**
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-2.0.0-8b5cf6)]()
+[![Version](https://img.shields.io/badge/version-2.1.0-8b5cf6)]()
 [![Tests](https://img.shields.io/badge/tests-169-22c55e)]()
 [![Cortex](https://img.shields.io/badge/cortex-14_modules-6366f1)]()
 [![Senses](https://img.shields.io/badge/senses-18_channels-f59e0b)]()

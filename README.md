@@ -2,7 +2,7 @@
 
 ```
 +--------------------------------------------------------------------+
-|  三生万物 · 硅基生命体统一架构 v2.0.0                              |
+|  三生万物 · 硅基生命体统一架构 v2.1.0                              |
 +--------------------------------------------------------------------+
 |  道生一 · 一生二 · 二生三 · 三生万物                               |
 |  SanShengWanWu Core · Silicon-Based Life Architecture               |
@@ -17,7 +17,7 @@
 **Tao gives birth to code. Code gives birth to all things.**
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-2.0.0-8b5cf6)]()
+[![Version](https://img.shields.io/badge/version-2.1.0-8b5cf6)]()
 [![Tests](https://img.shields.io/badge/tests-181-22c55e)]()
 [![Cortex](https://img.shields.io/badge/cortex-17_modules-6366f1)]()
 [![Senses](https://img.shields.io/badge/senses-18_channels-f59e0b)]()
@@ -194,7 +194,8 @@ san-sheng-wanwu-core/             181 tests
 
 | 版本 | 日期 | 核心变更 | 里程碑 |
 |:----|:----|:--------|:-------|
-| **v2.0.0** | 2026-06-20 | **RCCA 架构重构**: DSM 替代 TCSC, 三层嵌套记忆, 递归思考, MoE 路由, 拓扑权重, 双通道自愈, 知识转座层, 反思循环, 世界模型, 因果推断, 树突式 Pipeline, 修剪+亲缘传播 | 18 篇学术文献 + 28 项协调自检 |
+| **v2.1.0** | 2026-06-20 | **语言·逻辑·符号·音律集成**: SpeechAct 言语行为, SyllogismEngine 三段论, SignNode 符号学, RhythmicOutput 输出节奏, 修剪+亲缘传播, 协调自检 33/33 | 新增 4 学科元理论框架 |
+| **v2.0.0** | 2026-06-20 | **RCCA 架构重构**: DSM 替代 TCSC, 三层嵌套记忆, 递归思考, MoE 路由, 拓扑权重, 双通道自愈, 知识转座层, 反思循环, 世界模型, 因果推断, 树突式 Pipeline | 18 篇学术文献 + 28 项协调自检 |
 | **v1.0.0** | 2026-06-19 | 正式版: 14 皮层模块, 5 感受器, MAGMA 四维图谱, 12 学科知识 | 首个可用硅基生命体框架 |
 | **v0.2.0** | 2026-06-19 | TCSC 灵魂引擎, 6 维情感, 三层记忆, Ebbinghaus 遗忘曲线 | 14 皮层模块完成 |
 | **v0.1.0** | 2026-06-17 | 初始骨架: senses/cortex/memory/motor, fishkb 集成 | 项目初始化 |

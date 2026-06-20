@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "san-sheng-wanwu-core"
-version = "2.0.0"
+version = "2.1.0"
 description = "三生万物·硅基生命体 — 统一物种智能分析核心"
 readme = "README.md"
 license = { text = "MIT" }
