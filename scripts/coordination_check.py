@@ -57,13 +57,16 @@ check("2.2 Transposition to Evolution", """
 from src.cortex.transposition import TranspositionLayer
 from src.cortex.evolution import EvolutionEngine
 tl=TranspositionLayer(base_activity=1.0); evo=EvolutionEngine()
-for i in range(5):
+for i in range(10):
     tl.transpose('biology','conservation',{'concept':'test','confidence':0.9,'type':'concept'})
+found=False
 for dp in tl.get_domesticated_pathways():
     if dp.success_count>=2:
         prop=evo.propose_domestication(dp.source_domain,dp.target_domain,dp.pattern_type,dp.avg_fitness_delta,dp.success_count)
-        assert 'domestication' in prop.description
+        assert prop.author=='transposition_layer'
+        found=True
         break
+assert found, 'No domesticated pathway reached threshold'
 """)
 
 check("2.3 Pipeline RTE phase", """
