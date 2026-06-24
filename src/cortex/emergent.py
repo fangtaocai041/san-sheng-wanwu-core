@@ -1,3 +1,5 @@
+# ⚠️ DIVERGENT COPY — canonical source: infrastructure/unified_emergence.py
+# This file adds RecursiveThinker not in infrastructure. TODO Phase 3: merge.
 """
 unified_emergence.py — 统一涌现检测引擎
 =========================================

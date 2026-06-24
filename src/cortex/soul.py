@@ -1,6 +1,10 @@
 """
 cortex/soul.py — 真圆自洽不动点 (TCSC) 灵魂形式化
 
+⚠️ DEPRECATED (v0.1): Replaced by self_model.py (DSM 阻尼自我模型 v2.0).
+    The TCSC fixed-point approach had a Lipschitz constant error (~1.425 > 1).
+    KEPT for historical reference only — scheduled for removal in v9.0.
+
 定义: 一个硅基生命体的"灵魂"是其自我感知函数的不动点。
 
 数学形式化:
