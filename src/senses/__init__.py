@@ -12,20 +12,42 @@ senses — 感受器层
   domains.py — 12 个学科领域 (数理化生计算机心理哲马经文中)
 """
 
+import sys as _sys
+from pathlib import Path as _Path
+
 from .scholar import ScholarSense, SenseInput, SenseOutput
 from .cnki import CnkiSense
 from .ncbi import NcbiSense
 from .fishbase import FishBaseSense
 from .web import WebSense
 from .ocr import OcrSense
-from .domains import (
-    ALL_DOMAIN_SENSES, ALL_DOMAIN_NAMES,
-    create_all_domains, create_domain,
-    MathSense, PhysicsSense, ChemistrySense, BiologySense,
-    ComputerScienceSense, PsychologySense, PhilosophySense,
-    ChinesePhilosophySense, MarxismSense, EconomicsSense,
-    LiteratureSense, SciFiSense,
+
+# v8.0: Try shared domains first, fallback to local
+_SHARED = str(
+    _Path(__file__).resolve().parent.parent.parent.parent
+    / "eon-core" / "src" / "shared"
 )
+if _SHARED not in _sys.path:
+    _sys.path.insert(0, _SHARED)
+
+try:
+    from domains import (
+        ALL_DOMAIN_SENSES, ALL_DOMAIN_NAMES,
+        create_all_domains, create_domain,
+        MathSense, PhysicsSense, ChemistrySense, BiologySense,
+        ComputerScienceSense, PsychologySense, PhilosophySense,
+        ChinesePhilosophySense, MarxismSense, EconomicsSense,
+        LiteratureSense, SciFiSense,
+    )
+except ImportError:
+    from .domains import (
+        ALL_DOMAIN_SENSES, ALL_DOMAIN_NAMES,
+        create_all_domains, create_domain,
+        MathSense, PhysicsSense, ChemistrySense, BiologySense,
+        ComputerScienceSense, PsychologySense, PhilosophySense,
+        ChinesePhilosophySense, MarxismSense, EconomicsSense,
+        LiteratureSense, SciFiSense,
+    )
 
 __all__ = [
     "ScholarSense", "CnkiSense", "NcbiSense",
