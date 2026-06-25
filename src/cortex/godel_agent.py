@@ -1,4 +1,11 @@
 """
+cortex/godel_agent.py — ⚠️ DEPRECATED (v8.0): 需要 LLM 运行时，未接入。
+
+核心功能 (SELF_IMPROVE, Monkey Patch) 依赖外部 LLM 推理，当前不可运行。
+实际替代: healing.py + regen.py (自愈闭环), evolution_executor.py (参数自适应)。
+
+保留此文件仅为学术参考。以下为原始文档:
+---
 cortex/godel_agent.py — 自指进化引擎 (Gödel Agent)
 
 受 Gödel Agent (Yin et al., 2024/ACL 2025) 和 Gödel Machine (Schmidhuber 2003) 启发:

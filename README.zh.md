@@ -62,7 +62,7 @@
 | **统计分析引擎** | ✅ | t检验/相关分析/描述统计 | — |
 | **同行评审模拟** | ✅ | 五维度评审+润色建议 | — |
 | **论文转PPT** | ✅ | 自动生成 7 页演示文稿 Markdown | — |
-| **Gödel 自指进化** | ✅ | SELF_INSPECT+SELF_IMPROVE 递归自我改进 | Yin et al. ACL 2025 |
+| **自愈引擎** | ✅ | 双通道自愈 + 愈→进化→验证闭环 | healing.py + regen.py |
 | **言语行为分析** | ✅ | SpeechAct 5 类型断言/疑问/指令/承诺/表态 | Austin 1962 |
 | **三段论演绎推理** | ✅ | SyllogismEngine Barbara 式 + Modus Tollens | Aristotle |
 | **符号学模型** | ✅ | SignNode 能指/所指/指称三元分离 | Peirce 1903, Saussure 1916 |
@@ -83,7 +83,7 @@ san-sheng-wanwu-core/             181 tests · 33 self-checks
 │   │   ├── self_model.py  DSM 阻尼自我模型
 │   │   ├── emotion.py     资源分配策略 (6维) + TL 注入
 │   │   ├── transposition.py 概念转座层 (TE 跳跃基因+修剪+亲缘)
-│   │   ├── godel_agent.py  Gödel 自指进化 (ACL 2025)
+│   │   ├── healing.py    双通道自愈引擎
 │   │   ├── reflect.py    反思循环 (闭环连接)
 │   │   ├── pragmatics.py  言语行为+三段论推理
 │   │   ├── brainstorming.py 科学选题/假设生成

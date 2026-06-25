@@ -110,7 +110,7 @@
 | **统计分析引擎** | ✅ | t检验/相关分析/描述统计 | — |
 | **同行评审模拟** | ✅ | 五维度评审+润色建议 | — |
 | **论文转PPT** | ✅ | 自动生成 7 页演示文稿 Markdown | — |
-| **Gödel 自指进化** | ✅ | SELF_INSPECT+SELF_IMPROVE 递归自我改进 | Yin et al. ACL 2025 |
+| **自愈引擎** | ✅ | 双通道自愈 + 愈→进化→验证闭环 | healing.py + regen.py |
 | **言语行为分析** | ✅ | SpeechAct 5 类型断言/疑问/指令/承诺/表态 | Austin 1962 |
 | **三段论演绎推理** | ✅ | SyllogismEngine Barbara 式 + Modus Tollens | Aristotle |
 | **符号学模型** | ✅ | SignNode 能指/所指/指称三元分离 | Peirce 1903, Saussure 1916 |

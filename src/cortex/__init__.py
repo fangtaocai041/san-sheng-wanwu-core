@@ -10,7 +10,7 @@ cortex — 认知处理核心
   dialectics.py  辩证矛盾检测与综合 (原 conflict-arbiter)
   emotion.py     情感引擎: 情感即操作系统 (价值分配)
   evolution.py   自我进化: 代码分析与修改提案 (Phase 3 骨架)
-  godel_agent.py  自指进化: Gödel Agent 递归自我改进 (ACL 2025)
+  # godel_agent.py  ⚠️ DEPRECATED: 需要 LLM, 未接入。见 healing+regen 替代。
   explanatory.py 可解释性: 推理链记录、多层解释生成 (XAI)
   healing.py     自愈引擎: 健康检查、异常诊断、自动恢复
   learning.py    学习适应: 策略追踪、参数自适应、感受器权重
@@ -38,7 +38,7 @@ from .cosmic import (
 from .dialectics import DialecticsCortex
 from .emotion import EmotionEngine, EmotionalState, EmotionType
 from .evolution import EvolutionEngine, ModificationProposal, EvolutionEvent
-from .godel_agent import GodelAgent, SelfState, ImprovementReport
+# ⚠️ DEPRECATED: from .godel_agent import GodelAgent, SelfState, ImprovementReport
 from .explanatory import ExplainabilityEngine, ReasoningTrace, ReasoningStep
 from .regen import RegenEngine, RegenEvent
 from .healing import HealingEngine, HealthCheck, HealingAction
@@ -75,8 +75,8 @@ __all__ = [
     "EmotionEngine", "EmotionalState", "EmotionType",
     # 自我进化
     "EvolutionEngine", "ModificationProposal", "EvolutionEvent",
-    # Gödel 自指进化
-    "GodelAgent", "SelfState", "ImprovementReport",
+    # Gödel 自指进化 — ⚠️ DEPRECATED
+    # "GodelAgent", "SelfState", "ImprovementReport",
     # 愈愈发动机
     "RegenEngine", "RegenEvent",
     # 可解释性
