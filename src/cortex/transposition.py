@@ -130,13 +130,15 @@ class TranspositionLayer:
     def __init__(self, base_activity: float = 0.3,
                  domestication_threshold: int = 3,
                  prune_threshold: float = 0.05,
-                 min_attempts_for_prune: int = 5):
+                 min_attempts_for_prune: int = 5,
+                 seed: int = 42):
         self.name = "transposition"
         self._base_activity = base_activity       # 基础转座活性
         self._stress_boost: float = 0.0           # 压力提升的活性
         self._domestication_threshold = domestication_threshold  # 驯化所需成功次数
         self._prune_threshold = prune_threshold      # 修剪阈值
         self._min_attempts_for_prune = min_attempts_for_prune  # 修剪前最少尝试次数
+        self._rng = random.Random(seed)  # deterministic transposition
 
         # 事件记录
         self._events: List[TranspositionEvent] = []
@@ -218,13 +220,12 @@ class TranspositionLayer:
         success_prob = bias * activity * pattern_confidence
 
         # 模拟转座结果
-        import random
-        success = random.random() < success_prob
+        success = self._rng.random() < success_prob
 
         # 适应性变化: 成功时正向, 失败时负向但小
-        fitness_delta = (random.random() * 0.3 + 0.1
+        fitness_delta = (self._rng.random() * 0.3 + 0.1
                         if success
-                        else -(random.random() * 0.2))
+                        else -(self._rng.random() * 0.2))
 
         event = TranspositionEvent(
             source_domain=source_domain,

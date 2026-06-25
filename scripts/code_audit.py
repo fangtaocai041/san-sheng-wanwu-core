@@ -18,7 +18,7 @@ for root, dirs, files in os.walk("scripts"):
             try:
                 subprocess.run([sys.executable, "-c", f"import ast; ast.parse(open('{path}','r',encoding='utf-8').read())"],
                              capture_output=True, timeout=5, check=True)
-            except:
+            except (subprocess.TimeoutExpired, subprocess.CalledProcessError, SyntaxError):
                 issues.append(f"PARSE ERROR: {path}")
 
 # Check __all__ items exist in module content (simplified)
