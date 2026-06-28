@@ -17,8 +17,7 @@ dependencies = [
 silicon-agent = "src.cli:main"
 
 [tool.setuptools.packages.find]
-where = ["src", "src/memory/kb"]
-include = ["src*", "fishkb*"]
+where = ["src"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
